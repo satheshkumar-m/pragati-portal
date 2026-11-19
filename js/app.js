@@ -169,11 +169,12 @@ async function renderLesson(user, id) {
     ${l.video_url ? `<iframe class="video" src="${esc(l.video_url)}" allowfullscreen></iframe>` : ''}
     <div class="lesson-body">${l.body || ''}</div>
   </div>
-  ${qs.length ? `<div class="card"><h3>${qs[0].type === 'profile' ? 'Your answers' : 'Check yourself'}</h3>
+  ${qs.length ? `<div class="card"><h3>${qs.every(q => q.type === 'profile') ? 'Your answers' : 'Check yourself'}</h3>
     ${renderQuestions(qs, existing ? existing.answers : undefined)}
-    ${existing ? `<p class="muted">${qs[0].type === 'profile' ? 'Saved. Thank you for answering honestly.' : `You scored ${existing.score}/${existing.total}.`}</p>` : '<p style="margin-top:12px"><button id="submit-q">Submit answers</button></p>'}
+    ${existing ? `<p class="muted">${existing.total ? `You scored ${existing.score}/${existing.total}.` : 'Saved. Thank you for answering honestly.'}</p>` : '<p style="margin-top:12px"><button id="submit-q">Submit answers</button></p>'}
   </div>` : (existing ? '<div class="card"><span class="pill ok">Marked as read</span></div>' : '<div class="card"><button id="mark-read">Mark as done</button></div>')}
   <div class="card"><h3>Ask about this lesson</h3><textarea id="ask-text" placeholder="What is confusing? Be specific."></textarea><p style="margin-top:8px"><button id="ask-btn" class="secondary">Send question</button></p></div>`;
+  document.querySelectorAll('[data-widget]').forEach(el => { const w = window.Widgets && Widgets[el.dataset.widget]; if (w) w(el); });
   const save = async answers => {
     const { score, total } = grade(qs, answers);
     await PB.create('attempts', { user: user.id, lesson: id, answers, score, total });

@@ -84,3 +84,10 @@ footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 24p
 details { border-top: 1px solid var(--line); padding: 10px 0; }
 details summary { font-weight: 600; cursor: pointer; }
 .wa { background: #25d366; color: #fff; }
+
+.step { margin: 18px 0; padding-top: 6px; }
+.step .pill { margin-bottom: 6px; }
+.widget { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; margin: 10px 0; }
+.widget canvas { width: 100%; border-radius: 10px; display: block; }
+.widget input[type=range] { padding: 0; }
+.widget table th, .widget table td { padding: 6px 4px; border-bottom: 1px solid var(--line); }

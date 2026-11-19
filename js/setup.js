@@ -73,13 +73,13 @@ async function seed(cols) {
   }
   for (const l of content.lessons) {
     const exists = await PB.first('lessons', { filter: `week = "${weekIds[l.week]}" && track = "${l.track}" && order = ${l.order}` });
-    if (exists) continue;
+    if (exists) { await PB.update('lessons', exists.id, { ...l, week: weekIds[l.week] }); log(`lesson "${l.title}": updated`, 'ok'); continue; }
     await PB.create('lessons', { ...l, week: weekIds[l.week], approved: true });
     log(`lesson "${l.title}": created`, 'ok');
   }
   for (const p of content.practice_sets) {
     const exists = await PB.first('practice_sets', { filter: `week = "${weekIds[p.week]}" && stream = "${p.stream}" && day = ${p.day}` });
-    if (exists) continue;
+    if (exists) { await PB.update('practice_sets', exists.id, { ...p, week: weekIds[p.week] }); log(`practice set "${p.title}": updated`, 'ok'); continue; }
     await PB.create('practice_sets', { ...p, week: weekIds[p.week], approved: true });
     log(`practice set "${p.title}": created`, 'ok');
   }

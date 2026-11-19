@@ -1,50 +1,274 @@
 {
   "weeks": [
-    { "number": 1, "title": "Where do I stand? Streams, and what AI actually is", "unlock_date": "2027-04-19 00:00:00", "summary": "Interest questionnaire, your first PCM taster, and the truth about how an AI model works." },
-    { "number": 2, "title": "Try every stream, learn to prompt", "unlock_date": "2027-04-26 00:00:00", "summary": "PCB, Commerce and Humanities tasters. Prompting that actually works. Your Stream Report arrives Friday." },
-    { "number": 3, "title": "Choose your stream, build your website", "unlock_date": "2027-05-03 00:00:00", "summary": "Lock your stream (you can switch until week 6). Build and publish a personal website with AI as your pair." },
-    { "number": 4, "title": "Python with an AI pair-programmer", "unlock_date": "2027-05-10 00:00:00", "summary": "Read code before you run it. Debug with AI. Ship a small working script." },
-    { "number": 5, "title": "Project sprint", "unlock_date": "2027-05-17 00:00:00", "summary": "Pick your project from the menu. Scope it, build version 1. Mid-course readiness test." },
-    { "number": 6, "title": "AI and the career you are choosing", "unlock_date": "2027-05-24 00:00:00", "summary": "What changes for doctors, engineers, CAs, lawyers, designers. Stream check-in and final report." },
-    { "number": 7, "title": "When not to trust AI", "unlock_date": "2027-05-31 00:00:00", "summary": "Deepfakes, bias, privacy, honesty. How to verify. Finish the project and record your demo." },
-    { "number": 8, "title": "Showcase and your Class 11 plan", "unlock_date": "2027-06-07 00:00:00", "summary": "Polish the portfolio, get your certificate, and leave with a readiness score and a 4-week plan." }
+    {
+      "number": 1,
+      "title": "Where do I stand? Streams, and what AI actually is",
+      "unlock_date": "2027-04-19 00:00:00",
+      "summary": "Interest questionnaire, your first PCM taster, and the truth about how an AI model works."
+    },
+    {
+      "number": 2,
+      "title": "Try every stream, learn to prompt",
+      "unlock_date": "2027-04-26 00:00:00",
+      "summary": "PCB, Commerce and Humanities tasters. Prompting that actually works. Your Stream Report arrives Friday."
+    },
+    {
+      "number": 3,
+      "title": "Choose your stream, build your website",
+      "unlock_date": "2027-05-03 00:00:00",
+      "summary": "Lock your stream (you can switch until week 6). Build and publish a personal website with AI as your pair."
+    },
+    {
+      "number": 4,
+      "title": "Python with an AI pair-programmer",
+      "unlock_date": "2027-05-10 00:00:00",
+      "summary": "Read code before you run it. Debug with AI. Ship a small working script."
+    },
+    {
+      "number": 5,
+      "title": "Project sprint",
+      "unlock_date": "2027-05-17 00:00:00",
+      "summary": "Pick your project from the menu. Scope it, build version 1. Mid-course readiness test."
+    },
+    {
+      "number": 6,
+      "title": "AI and the career you are choosing",
+      "unlock_date": "2027-05-24 00:00:00",
+      "summary": "What changes for doctors, engineers, CAs, lawyers, designers. Stream check-in and final report."
+    },
+    {
+      "number": 7,
+      "title": "When not to trust AI",
+      "unlock_date": "2027-05-31 00:00:00",
+      "summary": "Deepfakes, bias, privacy, honesty. How to verify. Finish the project and record your demo."
+    },
+    {
+      "number": 8,
+      "title": "Showcase and your Class 11 plan",
+      "unlock_date": "2027-06-07 00:00:00",
+      "summary": "Polish the portfolio, get your certificate, and leave with a readiness score and a 4-week plan."
+    }
   ],
   "lessons": [
     {
-      "week": 1, "track": "stream", "order": 1, "title": "Interest and aptitude questionnaire", "minutes": 20,
+      "week": 1,
+      "track": "stream",
+      "order": 1,
+      "title": "Interest and aptitude questionnaire",
+      "minutes": 20,
       "video_url": "",
       "body": "<p>There are no right answers here. Answer honestly and quickly; your first instinct is usually the true one.</p><p>This questionnaire feeds into your Stream Recommendation Report at the end of week 2, together with how the four taster lessons go.</p>",
       "questions": [
-        { "q": "When something breaks at home (a fan, a tap, the wifi), what do you usually do?", "options": ["Try to open it and figure out why", "Look up how it works and who to call", "Think about what it costs to fix vs replace", "Leave it, not my thing"], "type": "profile", "tags": ["pcm", "pcb", "commerce", "none"] },
-        { "q": "Which of these would you read for fun?", "options": ["How a rocket engine works", "How vaccines train the immune system", "How a company went from a garage to a billion dollars", "Why an empire fell"], "type": "profile", "tags": ["pcm", "pcb", "commerce", "humanities"] },
-        { "q": "A long maths problem that takes 20 minutes feels...", "options": ["Satisfying when it finally works", "Fine if I see the point", "Something I avoid", "Painful"], "type": "profile", "tags": ["pcm", "commerce", "humanities", "pcb"] },
-        { "q": "In a group project you naturally...", "options": ["Build the thing", "Research and check facts", "Plan, budget and keep people on track", "Write and present it"], "type": "profile", "tags": ["pcm", "pcb", "commerce", "humanities"] },
-        { "q": "Pick the sentence closest to you", "options": ["I like knowing exactly why something is true", "I like living things and how bodies work", "I like money, markets and how businesses run", "I like people, stories and arguments"], "type": "profile", "tags": ["pcm", "pcb", "commerce", "humanities"] }
+        {
+          "q": "When something breaks at home (a fan, a tap, the wifi), what do you usually do?",
+          "options": [
+            "Try to open it and figure out why",
+            "Look up how it works and who to call",
+            "Think about what it costs to fix vs replace",
+            "Leave it, not my thing"
+          ],
+          "type": "profile",
+          "tags": [
+            "pcm",
+            "pcb",
+            "commerce",
+            "none"
+          ]
+        },
+        {
+          "q": "Which of these would you read for fun?",
+          "options": [
+            "How a rocket engine works",
+            "How vaccines train the immune system",
+            "How a company went from a garage to a billion dollars",
+            "Why an empire fell"
+          ],
+          "type": "profile",
+          "tags": [
+            "pcm",
+            "pcb",
+            "commerce",
+            "humanities"
+          ]
+        },
+        {
+          "q": "A long maths problem that takes 20 minutes feels...",
+          "options": [
+            "Satisfying when it finally works",
+            "Fine if I see the point",
+            "Something I avoid",
+            "Painful"
+          ],
+          "type": "profile",
+          "tags": [
+            "pcm",
+            "commerce",
+            "humanities",
+            "pcb"
+          ]
+        },
+        {
+          "q": "In a group project you naturally...",
+          "options": [
+            "Build the thing",
+            "Research and check facts",
+            "Plan, budget and keep people on track",
+            "Write and present it"
+          ],
+          "type": "profile",
+          "tags": [
+            "pcm",
+            "pcb",
+            "commerce",
+            "humanities"
+          ]
+        },
+        {
+          "q": "Pick the sentence closest to you",
+          "options": [
+            "I like knowing exactly why something is true",
+            "I like living things and how bodies work",
+            "I like money, markets and how businesses run",
+            "I like people, stories and arguments"
+          ],
+          "type": "profile",
+          "tags": [
+            "pcm",
+            "pcb",
+            "commerce",
+            "humanities"
+          ]
+        }
       ]
     },
     {
-      "week": 1, "track": "stream", "order": 2, "title": "PCM taster: a real Class 11 kinematics problem", "minutes": 45,
+      "week": 1,
+      "track": "stream",
+      "order": 2,
+      "title": "Why does double the speed give four times the height?",
+      "minutes": 25,
       "video_url": "",
-      "body": "<p>This is what a Class 11 physics problem looks like. Not harder than Class 10, just more careful.</p><h3>The idea</h3><p>In Class 10 you used <em>v = u + at</em>. In Class 11 you will use the same equations, but you must track <strong>direction</strong> with signs, and you will be asked to reason, not just plug in.</p><h3>Worked example</h3><p>A ball is thrown straight up at 20 m/s. Take g = 10 m/s² downward. How high does it go and how long is it in the air?</p><p>Take up as positive. At the top, v = 0. Using v² = u² + 2as: 0 = 400 + 2(−10)s, so s = 20 m. Time to the top: 0 = 20 − 10t, so t = 2 s. Total time in the air is 4 s by symmetry.</p><p>Now try the questions. Use the hint if stuck. Ask the tutor box anything you do not understand; a person reads every question.</p>",
+      "body": "<div class=\"step\"><span class=\"pill\">1 · Hook</span>\n<p><b>A cricketer throws a ball straight up at 15 m/s. It reaches about 11 metres. Her friend throws at 30 m/s, exactly double.</b> How high does his go? Most people say 22 m. The real answer is 45 m. Not double. Four times.</p>\n<p>Why? Don't read ahead. Find out below by throwing balls yourself.</p></div>\n\n<div class=\"step\"><span class=\"pill\">2 · Play</span>\n<p>Pick a speed, <b>type your guess for the height first</b>, then throw. Do it at least three times with very different speeds. Wrong guesses are the whole point; that's how your brain notices the pattern.</p>\n<div data-widget=\"ball-throw\"></div></div>\n\n<div class=\"step\"><span class=\"pill\">3 · Name it</span>\n<p>What you just found has a name. When something is thrown straight up with speed <em>u</em> and gravity pulls it down at <em>g</em> (about 10 m/s² on Earth):</p>\n<p style=\"text-align:center;font-size:1.15rem\"><b>height = u² ÷ (2g)</b>  and  <b>time in the air = 2u ÷ g</b></p>\n<p>Check it against your table: 20 m/s gives 400 ÷ 20 = 20 m and 4 s. The <em>u²</em> is why doubling the speed quadruples the height. That's the only new thing in Class 11 kinematics: in Class 10 you plugged into formulas; in Class 11 you're expected to know <em>why</em> the formula has that shape. You now do.</p>\n<p class=\"muted small\">Where it comes from, if you're curious: at the top the ball's speed is zero. Using v² = u² + 2as with v = 0 and a = −g gives s = u²/2g. Same equation you had in Class 10, just used with a sign.</p></div>\n\n<div class=\"step\"><span class=\"pill\">4 · Do it</span>\n<p>Four questions below. Use the hints. Every one is a thing you just saw happen.</p></div>\n\n<div class=\"step\"><span class=\"pill\">5 · AI twist</span>\n<p>Open ChatGPT, Gemini or Claude and ask: <em>\"If I throw a ball up at 30 m/s, how high does it go? Explain like I'm 15.\"</em></p>\n<p>Now check it against your table and the formula. Did it get 45 m? Did it explain the square? Did it say anything you can prove wrong with your own throws? Write one line about it in your diary at the end of this week. This is the real skill: using AI and knowing when you're the one who's right.</p></div>",
       "questions": [
-        { "q": "A stone is thrown straight up at 30 m/s (g = 10 m/s²). Maximum height?", "options": ["30 m", "45 m", "60 m", "90 m"], "answer": 1, "hint": "At the top the velocity is zero. Use v² = u² + 2as with a = −10.", "explain": "0 = 900 − 20s gives s = 45 m." },
-        { "q": "Same stone. How long until it returns to the hand?", "options": ["3 s", "4.5 s", "6 s", "9 s"], "answer": 2, "hint": "Time up equals time down.", "explain": "Time to top = 30/10 = 3 s, so total 6 s." },
-        { "q": "A car goes from 0 to 20 m/s in 5 s, then stays at 20 m/s for 10 s. Total distance?", "options": ["200 m", "250 m", "300 m", "350 m"], "answer": 1, "hint": "Two parts: accelerating (average speed 10 m/s) and constant.", "explain": "First part: 10 × 5 = 50 m. Second: 20 × 10 = 200 m. Total 250 m." },
-        { "q": "Which statement is true at the highest point of a ball thrown up?", "options": ["Velocity and acceleration are both zero", "Velocity is zero, acceleration is g downward", "Velocity is g, acceleration is zero", "Both are maximum"], "answer": 1, "hint": "Gravity does not switch off at the top.", "explain": "Velocity is momentarily zero; acceleration stays g downward throughout." }
+        {
+          "q": "You throw at 10 m/s. Your friend throws at 20 m/s. His ball goes how many times higher than yours?",
+          "options": [
+            "Same",
+            "2×",
+            "4×",
+            "8×"
+          ],
+          "answer": 2,
+          "hint": "Look at your table. Height goes with the square of the speed.",
+          "explain": "Height ∝ u². Double the speed, 4× the height: 5 m vs 20 m."
+        },
+        {
+          "q": "A stone is thrown straight up at 30 m/s (g = 10). Maximum height?",
+          "options": [
+            "30 m",
+            "45 m",
+            "60 m",
+            "90 m"
+          ],
+          "answer": 1,
+          "hint": "u² ÷ 2g.",
+          "explain": "900 ÷ 20 = 45 m. That's the cricketer's friend from the hook."
+        },
+        {
+          "q": "Same stone. How long until it's back in the hand?",
+          "options": [
+            "3 s",
+            "4.5 s",
+            "6 s",
+            "9 s"
+          ],
+          "answer": 2,
+          "hint": "Time in the air = 2u ÷ g. Up and down take equal time.",
+          "explain": "2 × 30 ÷ 10 = 6 s: 3 s up, 3 s down."
+        },
+        {
+          "q": "At the very top of its flight, the ball's velocity and acceleration are...",
+          "options": [
+            "both zero",
+            "velocity zero, acceleration g downward",
+            "velocity g, acceleration zero",
+            "both at their maximum"
+          ],
+          "answer": 1,
+          "hint": "Watch the sim: the ball stops for an instant, but gravity never switches off.",
+          "explain": "Velocity is momentarily zero; acceleration stays 10 m/s² downward the whole time. That's why it comes back down."
+        },
+        {
+          "q": "Honest check: this lesson felt mostly like...",
+          "options": [
+            "Interesting, I'd do more of this",
+            "Fine, effort but worth it",
+            "Hard work I'd rather avoid",
+            "Boring"
+          ],
+          "type": "profile",
+          "tags": [
+            "pcm",
+            "pcm",
+            "none",
+            "none"
+          ]
+        }
       ]
     },
     {
-      "week": 1, "track": "ai", "order": 1, "title": "What an AI model actually is", "minutes": 30,
+      "week": 1,
+      "track": "ai",
+      "order": 1,
+      "title": "What an AI model actually is",
+      "minutes": 30,
       "video_url": "",
       "body": "<p>Everything you will use this summer, ChatGPT, Gemini, Claude, is a <strong>language model</strong>. Here is the whole idea in four steps.</p><ol><li><strong>Text becomes numbers.</strong> Words are chopped into tokens, roughly chunks of words, and each token becomes a list of numbers.</li><li><strong>The model predicts the next token.</strong> That is all it does. Given everything so far, it guesses what comes next, then does it again, and again.</li><li><strong>It learned by reading.</strong> It was trained on a huge amount of text and adjusted billions of internal numbers until its guesses got good.</li><li><strong>It does not look things up.</strong> Unless connected to a tool, it has no database. It produces the most likely continuation. That is why it can be fluent and wrong at the same time. This is called a hallucination.</li></ol><h3>Watch</h3><p>In the video, a model runs on an ordinary PC in the mentor's room. Watch it generate one token at a time. There is no magic box; it is a program.</p><h3>What this means for you</h3><p>Treat the model like a very well-read friend who never admits when they are unsure. Brilliant for explaining, drafting and practising. Dangerous for facts you have not checked.</p>",
       "questions": [
-        { "q": "What does a language model fundamentally do?", "options": ["Searches the internet for answers", "Predicts the next token given the text so far", "Stores every fact in a database", "Runs a calculator"], "answer": 1, "hint": "Think about step 2.", "explain": "It predicts the next token, repeatedly. Everything else is built on that." },
-        { "q": "Why can a model state something false with total confidence?", "options": ["It is lying on purpose", "It produces likely-sounding text, not verified facts", "Its internet connection failed", "It was trained only on fiction"], "answer": 1, "hint": "Fluent is not the same as true.", "explain": "It generates the most probable continuation, which can be wrong. Always verify facts." },
-        { "q": "A 'token' is closest to...", "options": ["A whole paragraph", "A chunk of a word or a short word", "A pixel", "A web page"], "answer": 1, "hint": "Smaller than a sentence.", "explain": "Tokens are word pieces; 'unbelievable' might be 3 tokens." }
+        {
+          "q": "What does a language model fundamentally do?",
+          "options": [
+            "Searches the internet for answers",
+            "Predicts the next token given the text so far",
+            "Stores every fact in a database",
+            "Runs a calculator"
+          ],
+          "answer": 1,
+          "hint": "Think about step 2.",
+          "explain": "It predicts the next token, repeatedly. Everything else is built on that."
+        },
+        {
+          "q": "Why can a model state something false with total confidence?",
+          "options": [
+            "It is lying on purpose",
+            "It produces likely-sounding text, not verified facts",
+            "Its internet connection failed",
+            "It was trained only on fiction"
+          ],
+          "answer": 1,
+          "hint": "Fluent is not the same as true.",
+          "explain": "It generates the most probable continuation, which can be wrong. Always verify facts."
+        },
+        {
+          "q": "A 'token' is closest to...",
+          "options": [
+            "A whole paragraph",
+            "A chunk of a word or a short word",
+            "A pixel",
+            "A web page"
+          ],
+          "answer": 1,
+          "hint": "Smaller than a sentence.",
+          "explain": "Tokens are word pieces; 'unbelievable' might be 3 tokens."
+        }
       ]
     },
     {
-      "week": 1, "track": "ai", "order": 2, "title": "Your AI-use diary: the first experiment", "minutes": 25,
+      "week": 1,
+      "track": "ai",
+      "order": 2,
+      "title": "Your AI-use diary: the first experiment",
+      "minutes": 25,
       "video_url": "",
       "body": "<p>This week's build task is small on purpose. Open any AI chat (ChatGPT, Gemini or Claude, free versions are fine) and do these three things. Write what happened in your diary below.</p><ol><li>Ask it to explain the kinematics problem from the PCM taster in a different way than the lesson did. Was it clearer? Was anything wrong?</li><li>Ask it something you already know the answer to from Class 10. Did it get it right?</li><li>Ask it for a fact about your own town or school. Check it. Was it correct?</li></ol><p>Submit your diary as this week's checkpoint by Friday. Three honest paragraphs is enough.</p>",
       "questions": []
@@ -52,13 +276,67 @@
   ],
   "practice_sets": [
     {
-      "week": 1, "stream": "pcm", "day": 1, "title": "Kinematics warm-up", "difficulty": 1,
+      "week": 1,
+      "stream": "pcm",
+      "day": 1,
+      "title": "Kinematics warm-up",
+      "difficulty": 1,
       "questions": [
-        { "q": "A body starts from rest and accelerates at 2 m/s² for 4 s. Final velocity?", "options": ["4 m/s", "6 m/s", "8 m/s", "16 m/s"], "answer": 2, "explain": "v = u + at = 0 + 2 × 4 = 8 m/s." },
-        { "q": "Distance covered in that time?", "options": ["8 m", "16 m", "32 m", "64 m"], "answer": 1, "explain": "s = ut + ½at² = 0 + ½ × 2 × 16 = 16 m." },
-        { "q": "A train slows from 30 m/s to 10 m/s over 100 m. Deceleration?", "options": ["2 m/s²", "4 m/s²", "8 m/s²", "10 m/s²"], "answer": 1, "explain": "v² = u² + 2as: 100 = 900 + 200a, a = −4 m/s²." },
-        { "q": "The slope of a velocity–time graph gives...", "options": ["Distance", "Displacement", "Acceleration", "Speed"], "answer": 2, "explain": "Slope of v–t is acceleration; area under it is displacement." },
-        { "q": "The area under a velocity–time graph gives...", "options": ["Acceleration", "Displacement", "Jerk", "Force"], "answer": 1, "explain": "Area under v–t = displacement." }
+        {
+          "q": "A body starts from rest and accelerates at 2 m/s² for 4 s. Final velocity?",
+          "options": [
+            "4 m/s",
+            "6 m/s",
+            "8 m/s",
+            "16 m/s"
+          ],
+          "answer": 2,
+          "explain": "v = u + at = 0 + 2 × 4 = 8 m/s."
+        },
+        {
+          "q": "Distance covered in that time?",
+          "options": [
+            "8 m",
+            "16 m",
+            "32 m",
+            "64 m"
+          ],
+          "answer": 1,
+          "explain": "s = ut + ½at² = 0 + ½ × 2 × 16 = 16 m."
+        },
+        {
+          "q": "A train slows from 30 m/s to 10 m/s over 100 m. Deceleration?",
+          "options": [
+            "2 m/s²",
+            "4 m/s²",
+            "8 m/s²",
+            "10 m/s²"
+          ],
+          "answer": 1,
+          "explain": "v² = u² + 2as: 100 = 900 + 200a, a = −4 m/s²."
+        },
+        {
+          "q": "The slope of a velocity–time graph gives...",
+          "options": [
+            "Distance",
+            "Displacement",
+            "Acceleration",
+            "Speed"
+          ],
+          "answer": 2,
+          "explain": "Slope of v–t is acceleration; area under it is displacement."
+        },
+        {
+          "q": "The area under a velocity–time graph gives...",
+          "options": [
+            "Acceleration",
+            "Displacement",
+            "Jerk",
+            "Force"
+          ],
+          "answer": 1,
+          "explain": "Area under v–t = displacement."
+        }
       ]
     }
   ]

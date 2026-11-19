@@ -170,7 +170,7 @@ async function renderLesson(user, id) {
   const body = (l.body || '').replace(/<p>\s*\[\[widget:([a-z0-9-]+)\]\]\s*<\/p>|\[\[widget:([a-z0-9-]+)\]\]/g, (m, x, y) => `<div data-widget="${x || y}"></div>`);
   const stepNames = ['Hook', 'Play', 'Name it', 'Do it', 'AI twist'];
   const trackName = { stream: 'Stream taster', ai: 'AI', academic: 'Class 11' }[l.track];
-  view.parentElement.classList.add('wide');
+  view.classList.add('wide');
   view.innerHTML = `
   <div class="lesson-wrap">
     <aside class="rail">
@@ -434,7 +434,7 @@ async function route() {
   $('#logout').style.display = ''; $('#who').textContent = user.role === 'admin' ? 'admin' : user.name.split(' ')[0];
   $('#nav-progress').style.display = user.role === 'student' ? '' : 'none';
   const [path, arg] = location.hash.replace('#', '').split('/');
-  view.innerHTML = '<p class="muted">Loading…</p>'; view.parentElement.classList.remove('wide');
+  view.innerHTML = '<p class="muted">Loading…</p>'; view.classList.remove('wide');
   try {
     if (user.role === 'admin') return renderAdmin(user, path && path !== 'home' ? path : 'queue');
     if (user.role === 'parent') return renderParent(user);

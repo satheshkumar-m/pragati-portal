@@ -30,9 +30,9 @@ const Stickman = (() => {
   </g>
 </svg>`;
   const css = `
-  .stickman { position: fixed; left: max(10px, calc((100vw - 1120px) / 2 + 30px)); bottom: 18px; width: 130px; z-index: 5; pointer-events: none; display: none; }
+  .stickman { position: fixed; left: 40px; bottom: 18px; width: 130px; z-index: 5; pointer-events: none; display: none; }
   @media (min-width: 1041px) { .stickman { display: block; } }
-  .stickman.rail-mount { position: static; display: block; width: 130px; }
+  .stickman.rail-mount { position: static; display: block; width: 150px; }
   .stickman.inline { position: static; display: block; width: 96px; margin: 0 auto 6px; }
   .stickman .name { text-align: center; font: 600 12px "Public Sans", sans-serif; color: rgba(255,255,255,.7); margin-top: 2px; }
   .stickman.inline .name { color: #4a5468; }

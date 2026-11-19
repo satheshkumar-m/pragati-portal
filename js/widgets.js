@@ -6,7 +6,7 @@ Widgets['ball-throw'] = function (root) {
   const G = 10, MAXV = 40, MAXH = MAXV * MAXV / (2 * G); // 80 m
   root.innerHTML = `
     <div class="widget">
-      <canvas class="sim" height="320"></canvas>
+      <canvas class="sim"></canvas>
       <div class="controls">
         <label>Throw speed <b class="vlabel">20</b> m/s<input class="speed" type="range" min="5" max="${MAXV}" step="1" value="20"></label>
         <div></div>
@@ -20,7 +20,7 @@ Widgets['ball-throw'] = function (root) {
   const cv = root.querySelector('.sim'), ctx = cv.getContext('2d');
   const speed = root.querySelector('.speed'), vlabel = root.querySelector('.vlabel'), guess = root.querySelector('.guess');
   const btn = root.querySelector('.throw'), result = root.querySelector('.result'), table = root.querySelector('.rounds'), tbody = table.querySelector('tbody'), pattern = root.querySelector('.pattern');
-  const rounds = []; let anim = null; const H = 320;
+  const rounds = []; let anim = null; const H = window.innerWidth >= 1400 ? 420 : 320;
   const stars = Array.from({ length: 40 }, () => [Math.random(), Math.random() * 0.6, Math.random() * 1.2 + 0.4]);
 
   function size() { const w = cv.clientWidth || 600; cv.width = w * devicePixelRatio; cv.height = H * devicePixelRatio; ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); }

@@ -165,8 +165,15 @@ async function renderHome(user) {
   <div class="card"><h3>Stuck on something?</h3><p class="muted small">Ask here. A person reads every question and answers within a day.</p><a class="btn secondary" href="#ask">Ask the tutor</a></div>`;
 }
 
+async function contentFile() {
+  if (!cache.content) cache.content = fetch('content/week1.json?v=' + (document.querySelector('script[src*="app.js"]')?.src.split('v=')[1] || Date.now())).then(r => r.json()).catch(() => null);
+  return cache.content;
+}
 async function renderLesson(user, id) {
   const l = await PB.getOne('lessons', id, 'week');
+  const cf = await contentFile();
+  const fresh = cf && cf.lessons.find(x => x.week === l.expand?.week?.number && x.track === l.track && x.order === l.order);
+  if (fresh) Object.assign(l, { title: fresh.title, body: fresh.body, questions: fresh.questions, minutes: fresh.minutes, video_url: fresh.video_url });
   const existing = await PB.first('attempts', { filter: `user = "${user.id}" && lesson = "${id}"` });
   if (existing && existing.answers && !Array.isArray(existing.answers)) existing.answers = existing.answers.answers || [];
   const qs = l.questions || [];

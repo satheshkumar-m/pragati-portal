@@ -1,4 +1,4 @@
-/* Interactive lesson widgets. A lesson body includes <div data-widget="name"></div>; app.js mounts it. */
+/* Interactive lesson widgets. A lesson body includes [[widget:name]]; app.js mounts it. */
 const Widgets = {};
 
 /* Ball throw: predict the height, throw, see the truth, find the pattern. */
@@ -6,54 +6,64 @@ Widgets['ball-throw'] = function (root) {
   const G = 10, MAXV = 40, MAXH = MAXV * MAXV / (2 * G); // 80 m
   root.innerHTML = `
     <div class="widget">
-      <canvas class="sim" height="280"></canvas>
-      <div class="row" style="margin-top:10px">
-        <label style="flex:1;margin:0">Throw speed: <b class="vlabel">20</b> m/s<input class="speed" type="range" min="5" max="${MAXV}" step="1" value="20" style="margin-top:4px"></label>
+      <canvas class="sim" height="320"></canvas>
+      <div class="controls">
+        <label>Throw speed <b class="vlabel">20</b> m/s<input class="speed" type="range" min="5" max="${MAXV}" step="1" value="20"></label>
+        <div></div>
+        <label>Your guess: how high will it go? (metres)<input class="guess" type="number" min="0" step="1" placeholder="type a number, then throw"></label>
+        <button class="throw">Throw</button>
+        <div class="result"></div>
+        <table class="rounds" style="display:none"><thead><tr><th>Speed</th><th>Your guess</th><th>Actual</th><th>Time in air</th></tr></thead><tbody></tbody></table>
+        <div class="pattern" style="display:none"></div>
       </div>
-      <div class="row" style="margin-top:10px">
-        <label style="flex:1;margin:0">Your guess: how high will it go? (m)<input class="guess" type="number" min="0" step="1" placeholder="type a number first"></label>
-        <button class="throw" style="align-self:flex-end">Throw</button>
-      </div>
-      <div class="result muted small" style="margin-top:8px"></div>
-      <table class="rounds" style="width:100%;margin-top:10px;border-collapse:collapse;font-size:.9rem;display:none">
-        <thead><tr><th style="text-align:left">Speed</th><th>Your guess</th><th>Actual</th><th>Time in air</th></tr></thead><tbody></tbody>
-      </table>
-      <div class="pattern" style="display:none;margin-top:12px;padding:12px;background:#fff4e3;border-radius:10px"></div>
     </div>`;
   const cv = root.querySelector('.sim'), ctx = cv.getContext('2d');
   const speed = root.querySelector('.speed'), vlabel = root.querySelector('.vlabel'), guess = root.querySelector('.guess');
   const btn = root.querySelector('.throw'), result = root.querySelector('.result'), table = root.querySelector('.rounds'), tbody = table.querySelector('tbody'), pattern = root.querySelector('.pattern');
-  const rounds = [];
-  let anim = null;
+  const rounds = []; let anim = null; const H = 320;
+  const stars = Array.from({ length: 40 }, () => [Math.random(), Math.random() * 0.6, Math.random() * 1.2 + 0.4]);
 
-  function size() { cv.width = cv.clientWidth * devicePixelRatio; cv.height = 280 * devicePixelRatio; ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); }
-  function draw(h, v, t, peak) {
-    const W = cv.clientWidth, H = 280, ground = H - 24, scale = (ground - 30) / MAXH;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#eef3f0'; ctx.fillRect(0, 0, W, H);
-    // height ticks
-    ctx.strokeStyle = '#d6d2c8'; ctx.fillStyle = '#6b6a66'; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
-    for (let m = 0; m <= MAXH; m += 20) { const y = ground - m * scale; ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(W, y); ctx.stroke(); ctx.fillText(m + ' m', 4, y + 4); }
-    ctx.fillStyle = '#8a7f6a'; ctx.fillRect(0, ground, W, 24);
+  function size() { const w = cv.clientWidth || 600; cv.width = w * devicePixelRatio; cv.height = H * devicePixelRatio; ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); }
+
+  function thrower(px, py, swing) {
+    // swing 0..1 : arm from wound-back to released overhead
+    const armAng = Math.PI * 0.35 - swing * Math.PI * 0.95;
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.arc(px, py - 60, 10, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(px, py - 50); ctx.lineTo(px, py - 24); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px, py - 24); ctx.lineTo(px - 9, py); ctx.moveTo(px, py - 24); ctx.lineTo(px + 9, py); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px, py - 44); ctx.lineTo(px - 14, py - 26); ctx.stroke();
+    const ex = px + Math.cos(armAng) * 16, ey = py - 44 + Math.sin(armAng) * 16;
+    ctx.beginPath(); ctx.moveTo(px, py - 44); ctx.lineTo(ex, ey); ctx.lineTo(ex + Math.cos(armAng - 0.5) * 14, ey + Math.sin(armAng - 0.5) * 14); ctx.stroke();
+    // scarf
+    ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.moveTo(px - 8, py - 50); ctx.quadraticCurveTo(px, py - 44, px + 8, py - 50); ctx.lineTo(px + 7, py - 47); ctx.quadraticCurveTo(px, py - 41, px - 7, py - 47); ctx.closePath(); ctx.fill();
+    return [ex + Math.cos(armAng - 0.5) * 14, ey + Math.sin(armAng - 0.5) * 14];
+  }
+
+  function draw(h, v, t, peak, swing = 0) {
+    const W = cv.clientWidth || 600, ground = H - 34, scale = (ground - 44) / MAXH;
+    // sky
+    const sky = ctx.createLinearGradient(0, 0, 0, ground); sky.addColorStop(0, '#0b1526'); sky.addColorStop(0.6, '#1c3059'); sky.addColorStop(1, '#5a4a6a');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; stars.forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x * W, y * ground, r, 0, Math.PI * 2); ctx.fill(); });
+    // height lines
+    ctx.font = '12px "Public Sans", sans-serif'; ctx.textAlign = 'left';
+    for (let m = 20; m <= MAXH; m += 20) { const y = ground - m * scale; ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.setLineDash([2, 6]); ctx.beginPath(); ctx.moveTo(44, y); ctx.lineTo(W - 12, y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillText(m + ' m', 10, y + 4); }
+    // ground
+    const gr = ctx.createLinearGradient(0, ground, 0, H); gr.addColorStop(0, '#2f6b4f'); gr.addColorStop(1, '#1d4a36');
+    ctx.fillStyle = gr; ctx.fillRect(0, ground, W, H - ground);
+    ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(0, ground, W, 2);
     // guess line
     const g = Number(guess.value);
-    if (g > 0) { const y = ground - Math.min(g, MAXH) * scale; ctx.strokeStyle = '#b43c2a'; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(W, y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#b43c2a'; ctx.textAlign = 'right'; ctx.fillText('your guess ' + g + ' m', W - 6, y - 4); }
-    if (peak !== undefined) { const y = ground - peak * scale; ctx.strokeStyle = '#1f5f4a'; ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(W, y); ctx.stroke(); ctx.fillStyle = '#1f5f4a'; ctx.textAlign = 'right'; ctx.fillText('actual ' + peak + ' m', W - 6, y + 14); }
-    // thrower (stick man) left of the ball; arm swings during the first 0.3 s of a throw
-    const px = W / 2 - 34, py = ground;
-    const swing = t === undefined ? 0 : Math.min(1, t / 0.3);
-    const armAng = -Math.PI / 4 + swing * (-Math.PI * 0.6); // from 45° down-forward to overhead
-    ctx.strokeStyle = '#1c1b1a'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(px, py - 52, 8, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke(); // head
-    ctx.beginPath(); ctx.moveTo(px, py - 44); ctx.lineTo(px, py - 20); ctx.stroke(); // spine
-    ctx.beginPath(); ctx.moveTo(px, py - 20); ctx.lineTo(px - 8, py); ctx.moveTo(px, py - 20); ctx.lineTo(px + 8, py); ctx.stroke(); // legs
-    ctx.beginPath(); ctx.moveTo(px, py - 38); ctx.lineTo(px - 12, py - 22); ctx.stroke(); // back arm
-    ctx.beginPath(); ctx.moveTo(px, py - 38); ctx.lineTo(px + Math.cos(armAng) * 22, py - 38 + Math.sin(armAng) * 22); ctx.stroke(); // throwing arm
-    ctx.lineWidth = 1;
-    // ball
-    const y = ground - h * scale - 10;
-    ctx.beginPath(); ctx.arc(W / 2, y, 10, 0, Math.PI * 2); ctx.fillStyle = '#e8a33d'; ctx.fill(); ctx.strokeStyle = '#9a6410'; ctx.stroke();
-    if (t !== undefined) { ctx.fillStyle = '#1c1b1a'; ctx.textAlign = 'center'; ctx.font = 'bold 13px sans-serif'; ctx.fillText(`t = ${t.toFixed(1)} s   v = ${v.toFixed(0)} m/s`, W / 2, 20); }
+    if (g > 0) { const y = ground - Math.min(g, MAXH) * scale; ctx.strokeStyle = '#ff9a7a'; ctx.setLineDash([8, 6]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(44, y); ctx.lineTo(W - 12, y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#ff9a7a'; ctx.textAlign = 'right'; ctx.fillText('your guess ' + g + ' m', W - 16, y - 6); }
+    if (peak !== undefined) { const y = ground - peak * scale; ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(44, y); ctx.lineTo(W - 12, y); ctx.stroke(); ctx.fillStyle = '#ffd166'; ctx.textAlign = 'right'; ctx.font = '600 12px "Public Sans", sans-serif'; ctx.fillText('actual ' + peak + ' m', W - 16, y + 16); }
+    // thrower + ball
+    const [hx, hy] = thrower(W / 2 - 40, ground, swing);
+    const bx = h > 0 || swing >= 1 ? W / 2 : hx, by = h > 0 || swing >= 1 ? ground - h * scale - 12 : hy;
+    const glow = ctx.createRadialGradient(bx, by, 2, bx, by, 26); glow.addColorStop(0, 'rgba(255,209,102,.55)'); glow.addColorStop(1, 'rgba(255,209,102,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(bx, by, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx, by, 10, 0, Math.PI * 2); ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.strokeStyle = '#c98f00'; ctx.lineWidth = 2; ctx.stroke();
+    if (t !== undefined) { ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '600 14px "Public Sans", sans-serif'; ctx.fillText(`${t.toFixed(1)} s   ·   ${Math.abs(v).toFixed(0)} m/s ${v > 0.5 ? '↑' : v < -0.5 ? '↓' : ''}`, W / 2, 26); }
   }
   size(); draw(0); window.addEventListener('resize', () => { size(); draw(0); });
   speed.oninput = () => { vlabel.textContent = speed.value; if (!anim) draw(0); };
@@ -61,25 +71,27 @@ Widgets['ball-throw'] = function (root) {
 
   btn.onclick = () => {
     const g = Number(guess.value);
-    if (!(g > 0)) { result.textContent = 'Guess first. Being wrong is the point.'; guess.focus(); return; }
+    if (!(g > 0)) { result.textContent = 'Type a guess first. Being wrong is the point.'; guess.focus(); return; }
     if (anim) return;
     const u = Number(speed.value), peak = u * u / (2 * G), T = 2 * u / G;
-    const t0 = performance.now(); const slow = 1.2; // slow motion
+    const slow = 1.2, wind = 0.35; const t0 = performance.now();
     btn.disabled = true;
-    if (window.Stickman) Stickman.set('throw', 900);
+    if (window.Stickman) Stickman.set('throw', 1200);
     function frame(now) {
-      const t = Math.min(T, (now - t0) / 1000 / slow);
+      const el = (now - t0) / 1000;
+      if (el < wind) { draw(0, u, undefined, undefined, el / wind); anim = requestAnimationFrame(frame); return; }
+      const t = Math.min(T, (el - wind) / slow);
       const h = u * t - 0.5 * G * t * t, v = u - G * t;
-      draw(Math.max(0, h), v, t, t >= T ? peak : undefined);
+      draw(Math.max(0, h), v, t, t >= T ? peak : undefined, 1);
       if (t < T) anim = requestAnimationFrame(frame);
       else {
         anim = null; btn.disabled = false;
         rounds.push({ u, g, peak, T });
-        tbody.insertAdjacentHTML('beforeend', `<tr><td>${u} m/s</td><td style="text-align:center;color:#b43c2a">${g} m</td><td style="text-align:center;color:#1f5f4a"><b>${peak} m</b></td><td style="text-align:center">${T} s</td></tr>`);
+        tbody.insertAdjacentHTML('beforeend', `<tr><td>${u} m/s</td><td class="guessv">${g} m</td><td class="actualv">${peak} m</td><td>${T} s</td></tr>`);
         table.style.display = '';
         const off = Math.round(100 * Math.abs(g - peak) / peak);
-        result.textContent = off <= 10 ? `Close: you were within ${off}%. Try a very different speed now.` : (g > peak ? `Too high by ${g - peak} m. Now try a different speed and guess again.` : `Too low by ${peak - g} m. Now try a different speed and guess again.`);
-        if (window.Stickman) { if (off <= 10) { Stickman.set('cheer', 2500); } else { Stickman.set('think'); Stickman.say(off > 50 ? 'Hmm…' : 'Close!', 2500); } }
+        result.textContent = off <= 10 ? `Close: within ${off}%. Now try a very different speed.` : (g > peak ? `Too high by ${g - peak} m. Try a different speed and guess again.` : `Too low by ${peak - g} m. Try a different speed and guess again.`);
+        if (window.Stickman) { if (off <= 10) Stickman.set('cheer', 2500); else { Stickman.set('think', 2500); Stickman.say(off > 50 ? 'Hmm…' : 'Close!', 2500); } }
         guess.value = '';
         if (rounds.length >= 3) showPattern();
       }
@@ -90,9 +102,10 @@ Widgets['ball-throw'] = function (root) {
   function showPattern() {
     const sorted = [...rounds].sort((a, b) => a.u - b.u);
     const lo = sorted[0], hi = sorted[sorted.length - 1];
+    if (hi.u === lo.u) return;
     const r = (hi.u / lo.u).toFixed(1), rh = (hi.peak / lo.peak).toFixed(1);
     pattern.style.display = '';
-    if (window.Stickman) { Stickman.set('cheer', 3000); }
-    pattern.innerHTML = `<b>Look at your own table.</b> Going from ${lo.u} m/s to ${hi.u} m/s is ${r}× the speed, but the ball went ${rh}× as high. Time in the air, though, only grew ${(hi.T / lo.T).toFixed(1)}×, the same as the speed.<br><br>So: <b>height grows with the square of the speed; time grows in a straight line with it.</b> You just discovered that. Keep reading to see what it is called.`;
+    if (window.Stickman) Stickman.set('cheer', 3000);
+    pattern.innerHTML = `<b>Look at your own table.</b> From ${lo.u} m/s to ${hi.u} m/s is ${r}× the speed, but the ball went ${rh}× as high. Time in the air only grew ${(hi.T / lo.T).toFixed(1)}×, the same as the speed.<br><br><b>Height grows with the square of the speed; time grows in a straight line with it.</b> You just discovered that. Keep reading to see what it is called.`;
   }
 };

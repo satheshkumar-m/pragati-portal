@@ -51,12 +51,12 @@ function renderQuestions(questions, existing) {
     const prev = existing ? existing[i] : undefined;
     const graded = existing !== undefined && qq.type !== 'profile';
     return `<div class="q" data-i="${i}">
-      <div><b>${i + 1}.</b> ${esc(qq.q)}</div>
+      <div class="qt">${i + 1}. ${esc(qq.q)}</div>
       ${qq.hint && !graded ? `<div class="hint" onclick="this.textContent='Hint: ${esc(qq.hint).replace(/'/g, '&#39;')}'">Show hint</div>` : ''}
       ${qq.options.map((o, j) => {
         let cls = '';
         if (graded) { if (j === qq.answer) cls = 'correct'; else if (prev === j) cls = 'wrong'; }
-        return `<label class="opt ${cls}"><input type="radio" name="q${i}" value="${j}" ${prev === j ? 'checked' : ''} ${existing !== undefined ? 'disabled' : ''}>${esc(o)}</label>`;
+        return `<label class="opt ${cls}"><input type="radio" name="q${i}" value="${j}" ${prev === j ? 'checked' : ''} ${existing !== undefined ? 'disabled' : ''}><span class="k">${'ABCD'[j] || j + 1}</span><span>${esc(o)}</span></label>`;
       }).join('')}
       ${graded && qq.explain ? `<div class="explain">${esc(qq.explain)}</div>` : ''}
     </div>`;
@@ -98,10 +98,10 @@ const Speech = (() => {
     ok,
     speak(title, html, btn) {
       if (!ok) return;
-      if (speechSynthesis.speaking) { speechSynthesis.cancel(); btn.textContent = '▶ Listen'; if (window.Stickman) Stickman.set('idle'); return; }
+      if (speechSynthesis.speaking) { speechSynthesis.cancel(); btn.textContent = '▶ Listen to this lesson'; if (window.Stickman) Stickman.set('idle'); return; }
       const u = new SpeechSynthesisUtterance(title + '. ' + textOf(html));
       if (voice) u.voice = voice; u.rate = 0.95; u.pitch = 1;
-      u.onend = u.onerror = () => { btn.textContent = '▶ Listen'; if (window.Stickman) Stickman.set('idle'); };
+      u.onend = u.onerror = () => { btn.textContent = '▶ Listen to this lesson'; if (window.Stickman) Stickman.set('idle'); };
       btn.textContent = '■ Stop'; speechSynthesis.speak(u); if (window.Stickman) Stickman.set('talk');
     },
     stop() { if (ok) speechSynthesis.cancel(); },
@@ -167,28 +167,53 @@ async function renderLesson(user, id) {
   const l = await PB.getOne('lessons', id, 'week');
   const existing = await PB.first('attempts', { filter: `user = "${user.id}" && lesson = "${id}"` });
   const qs = l.questions || [];
+  const body = (l.body || '').replace(/<p>\s*\[\[widget:([a-z0-9-]+)\]\]\s*<\/p>|\[\[widget:([a-z0-9-]+)\]\]/g, (m, x, y) => `<div data-widget="${x || y}"></div>`);
+  const stepNames = ['Hook', 'Play', 'Name it', 'Do it', 'AI twist'];
+  const trackName = { stream: 'Stream taster', ai: 'AI', academic: 'Class 11' }[l.track];
+  view.parentElement.classList.add('wide');
   view.innerHTML = `
-  <a href="#home" class="small">← Week ${l.expand?.week?.number || ''}</a>
-  <div class="card">
-    <span class="pill ${l.track}">${TRACK[l.track]}</span>
-    <div class="row spread"><h1 style="margin:8px 0">${esc(l.title)}</h1>${Speech.ok ? '<button id="listen" class="secondary" style="padding:6px 12px">▶ Listen</button>' : ''}</div>
-    ${l.video_url ? `<iframe class="video" src="${esc(l.video_url)}" allowfullscreen></iframe>` : ''}
-    <div class="lesson-body">${(l.body || '').replace(/<p>\s*\[\[widget:([a-z0-9-]+)\]\]\s*<\/p>|\[\[widget:([a-z0-9-]+)\]\]/g, (m, a, b) => `<div data-widget="${a || b}"></div>`)}</div>
-  </div>
-  ${qs.length ? `<div class="card"><h3>${qs.every(q => q.type === 'profile') ? 'Your answers' : 'Check yourself'}</h3>
-    ${renderQuestions(qs, existing ? existing.answers : undefined)}
-    ${existing ? `<p class="muted">${existing.total ? `You scored ${existing.score}/${existing.total}.` : 'Saved. Thank you for answering honestly.'}</p>` : '<p style="margin-top:12px"><button id="submit-q">Submit answers</button></p>'}
-  </div>` : (existing ? '<div class="card"><span class="pill ok">Marked as read</span></div>' : '<div class="card"><button id="mark-read">Mark as done</button></div>')}
-  <div class="card"><h3>Ask about this lesson</h3><textarea id="ask-text" placeholder="What is confusing? Be specific."></textarea><p style="margin-top:8px"><button id="ask-btn" class="secondary">Send question</button></p></div>`;
+  <div class="lesson-wrap">
+    <aside class="rail">
+      <a class="back" href="#home">← Week ${l.expand?.week?.number || ''}</a>
+      <ol id="rail-steps">${stepNames.map(s => `<li>${s}</li>`).join('')}<li>Check yourself</li></ol>
+      <div class="mentor" id="rail-mentor"></div>
+    </aside>
+    <div class="main">
+      <div class="card notebook">
+        <div class="lesson-head">
+          <span class="pill ${l.track}">${trackName}</span>
+          <h1 style="margin-top:10px">${esc(l.title)}</h1>
+          <div class="meta"><span>${l.minutes || 20} minutes</span><span>Week ${l.expand?.week?.number || ''}</span>${qs.length ? `<span>${qs.filter(q => q.type !== 'profile').length} questions</span>` : ''}</div>
+          ${Speech.ok ? '<div class="listen"><button id="listen" class="secondary">▶ Listen to this lesson</button></div>' : ''}
+          <div class="mini-steps" id="mini-steps">${stepNames.map(() => '<i></i>').join('')}<i></i></div>
+          <div id="sm-slot"></div>
+        </div>
+        ${l.video_url ? `<iframe class="video" src="${esc(l.video_url)}" allowfullscreen></iframe>` : ''}
+        <div class="lesson-body">${body}</div>
+        ${qs.length ? `<div class="step" id="check"><span class="pill">${qs.every(q => q.type === 'profile') ? 'Your answers' : 'Check yourself'}</span>
+          ${renderQuestions(qs, existing ? existing.answers : undefined)}
+          ${existing ? `<p class="muted">${existing.total ? `You scored ${existing.score}/${existing.total}.` : 'Saved. Thank you for answering honestly.'}</p>` : '<p style="margin-top:14px"><button id="submit-q" class="primary">Check my answers</button></p>'}
+        </div>` : (existing ? '<div class="step"><span class="pill ok">Done</span></div>' : '<div class="step"><button id="mark-read" class="primary">Mark as done</button></div>')}
+      </div>
+      <div class="card"><h3>Stuck on something in this lesson?</h3><p class="muted small">Ask ${window.Stickman ? Stickman.NAME : 'the tutor'}. A person reads every question and answers within a day.</p><textarea id="ask-text" placeholder="What is confusing? Be specific."></textarea><p style="margin-top:10px"><button id="ask-btn" class="secondary">Send question</button></p></div>
+    </div>
+  </div>`;
   await helpersReady;
-  const slot = document.createElement('div'); slot.id = 'sm-slot'; view.querySelector('.card').prepend(slot);
-  Stickman.mount(window.innerWidth < 1100 ? slot : null); Stickman.set('point', 3500); Stickman.say('Read this first', 3500);
-  Stickman.watchSteps(view.querySelectorAll('.step'));
+  const wide = window.innerWidth > 1040;
+  Stickman.mount(wide ? $('#rail-mentor') : $('#sm-slot'), wide ? 'rail-mount' : 'inline');
+  Stickman.set('point', 3500); Stickman.say('Read this first', 3500);
+  const steps = [...view.querySelectorAll('.lesson-body .step'), $('#check')].filter(Boolean);
+  const railItems = view.querySelectorAll('#rail-steps li'), miniItems = view.querySelectorAll('#mini-steps i');
+  Stickman.watchSteps(steps, i => {
+    railItems.forEach((li, j) => { li.classList.toggle('active', j === i); li.classList.toggle('done', j < i); });
+    miniItems.forEach((it, j) => { it.classList.toggle('active', j === i); it.classList.toggle('done', j < i); });
+  });
   document.querySelectorAll('[data-widget]').forEach(el => { const w = window.Widgets && Widgets[el.dataset.widget]; if (w) w(el); });
   const save = async answers => {
     const { score, total } = grade(qs, answers);
     await PB.create('attempts', { user: user.id, lesson: id, answers, score, total });
     toast(total ? `Scored ${score}/${total}` : 'Saved'); await renderLesson(user, id);
+    location.hash = location.hash; document.getElementById('check')?.scrollIntoView({ block: 'start' });
     if (window.Stickman && total) { if (score / total >= 0.75) Stickman.set('cheer', 3000); else { Stickman.set('think'); Stickman.say('Read the explanations', 3500); } }
   };
   $('#submit-q')?.addEventListener('click', () => {
@@ -409,7 +434,7 @@ async function route() {
   $('#logout').style.display = ''; $('#who').textContent = user.role === 'admin' ? 'admin' : user.name.split(' ')[0];
   $('#nav-progress').style.display = user.role === 'student' ? '' : 'none';
   const [path, arg] = location.hash.replace('#', '').split('/');
-  view.innerHTML = '<p class="muted">Loading…</p>';
+  view.innerHTML = '<p class="muted">Loading…</p>'; view.parentElement.classList.remove('wide');
   try {
     if (user.role === 'admin') return renderAdmin(user, path && path !== 'home' ? path : 'queue');
     if (user.role === 'parent') return renderParent(user);

@@ -3,19 +3,27 @@
 window.Stickman = (() => {
   let el = null, state = 'idle', timer = null, observer = null, lastStep = -1, onStep = null;
   const NAME = 'Abhi';
-  // Seven personalities, one per weekday. Lines are English with a Tamil touch.
+  // Seven looks, one per weekday (scarf, entrance, idle habit). Lines come from the language sets below.
   const DAYS = [
-    { scarf: '#ff8fab', enter: 'enter-fade',  fidget: 'fidget-sway',    greet: 'Sunday special, da', lines: { hook: 'Guess first, paaru', play: 'Try it yourself', name: 'Now it gets a name', doit: 'Hints irukku', ai: 'Catch the AI out', wrong: ['Aiyo, think again', 'Yosi… once more'], close: ['Close, da!'], right: ['Semma!', 'Super da!'], good: ['Mass performance!'], bad: ['Read the explanations, seri?'] } },
-    { scarf: '#ffd166', enter: 'enter-walk',  fidget: 'fidget-tap',     greet: 'Vaa, let\'s start!', lines: { hook: 'Guess first!', play: 'Try it yourself', name: 'Now it gets a name', doit: 'Use the hints', ai: 'Catch the AI out', wrong: ['Yosi… think again', 'Enna? Try again'], close: ['Almost, da!'], right: ['Super da!', 'Semma!'], good: ['Vera level!'], bad: ['Explanations paaru'] } },
-    { scarf: '#7fd1ae', enter: 'enter-drop',  fidget: 'fidget-stretch', greet: 'Ready-ah?', lines: { hook: 'Paaru, guess first', play: 'Play, then read', name: 'Notice the pattern?', doit: 'Hints are free', ai: 'Trust, but verify', wrong: ['Aiyo! Again', 'Hmm… think'], close: ['So close!'], right: ['Sema!', 'Correct, da!'], good: ['Thalaiva!'], bad: ['Slow down, read again'] } },
-    { scarf: '#9ecbff', enter: 'enter-slide', fidget: 'fidget-look',    greet: 'Mid-week, machi', lines: { hook: 'Don\'t read ahead!', play: 'Your turn, machi', name: 'That has a name', doit: 'Take your time', ai: 'AI can be wrong, da', wrong: ['Enna da? Retry', 'Yosi, yosi'], close: ['Nearly!'], right: ['Super!', 'Mass!'], good: ['Padips! Brilliant'], bad: ['One more read, seri?'] } },
-    { scarf: '#f4a261', enter: 'enter-spin',  fidget: 'fidget-bounce',  greet: 'Physics time, da', lines: { hook: 'Guess before reading', play: 'Hands on, da', name: 'You found the rule', doit: 'You saw all this', ai: 'Catch the slip', wrong: ['Aiyo, think', 'Try once more'], close: ['Kitta vandhuta!'], right: ['Semma da!', 'Correct!'], good: ['Top class!'], bad: ['Paaru the explanations'] } },
-    { scarf: '#c77dff', enter: 'enter-pop',   fidget: 'fidget-scratch', greet: 'Checkpoint day!', lines: { hook: 'Guess first, machi', play: 'Try it, paaru', name: 'Name it now', doit: 'Hints irukku', ai: 'Verify, always', wrong: ['Hmm… again', 'Yosi…'], close: ['Close, close!'], right: ['Vera level!', 'Semma!'], good: ['Weekend earned!'], bad: ['Read, then retry'] } },
-    { scarf: '#ffe08a', enter: 'enter-walk',  fidget: 'fidget-juggle',  greet: 'Chill, but learn', lines: { hook: 'Guess first!', play: 'Play first!', name: 'Now it gets a name', doit: 'Easy ones, paaru', ai: 'Catch the AI out', wrong: ['Aiyo!', 'Think again, da'], close: ['Almost!'], right: ['Super da!', 'Mass!'], good: ['Saturday star!'], bad: ['Explanations first'] } },
+    { scarf: '#ff8fab', enter: 'enter-fade',  fidget: 'fidget-sway' },
+    { scarf: '#ffd166', enter: 'enter-walk',  fidget: 'fidget-tap' },
+    { scarf: '#7fd1ae', enter: 'enter-drop',  fidget: 'fidget-stretch' },
+    { scarf: '#9ecbff', enter: 'enter-slide', fidget: 'fidget-look' },
+    { scarf: '#f4a261', enter: 'enter-spin',  fidget: 'fidget-bounce' },
+    { scarf: '#c77dff', enter: 'enter-pop',   fidget: 'fidget-scratch' },
+    { scarf: '#ffe08a', enter: 'enter-walk',  fidget: 'fidget-juggle' },
   ];
+  const LANGS = {
+    en:      { label: 'English', greet: ['Sunday special', "Let's start!", 'Ready?', 'Mid-week, keep going', 'Friday brain on', 'Checkpoint day!', 'Chill, but learn'], hook: ['Guess first!', "Don't read ahead"], play: ['Try it yourself', 'Your turn'], name: ['Now it gets a name', 'Notice the pattern?'], doit: ['Use the hints', 'Take your time'], ai: ['Catch the AI out', 'Trust, but verify'], wrong: ['Hmm, think again', 'Try once more'], close: ['So close!', 'Almost!'], right: ['Yes!', 'Nailed it!'], good: ['Brilliant!', 'Top marks'], bad: ['Read the explanations', 'One more read'], idle: ['Still here', 'Take your time', 'Reading?'] },
+    hinglish:{ label: 'Hinglish', greet: ['Sunday special, yaar', 'Chalo, shuru karein!', 'Ready ho?', 'Mid-week, lage raho', 'Friday, dimaag on', 'Checkpoint day!', 'Chill, par seekho'], hook: ['Pehle guess karo!', 'Aage mat padho'], play: ['Khud try karo', 'Tumhari baari'], name: ['Ab iska naam', 'Pattern dikha?'], doit: ['Hints use karo', 'Aaram se'], ai: ['AI ko pakdo', 'Bharosa, par check'], wrong: ['Arre, phir socho', 'Ek baar aur'], close: ['Bilkul paas!', 'Almost, yaar'], right: ['Sahi!', 'Ekdum mast!'], good: ['Shabash!', 'Kamaal!'], bad: ['Explanation padho', 'Ek baar aur padho'], idle: ['Main yahin hoon', 'Aaram se', 'Padh rahe ho?'] },
+    tamil:   { label: 'Tamil mix', greet: ['Sunday special, da', "Vaa, let's start!", 'Ready-ah?', 'Mid-week, machi', 'Friday, moolai on', 'Checkpoint day!', 'Chill, but learn'], hook: ['Guess first, paaru', "Don't read ahead!"], play: ['Try it, paaru', 'Un turn, machi'], name: ['Now it gets a name', 'Pattern paaru'], doit: ['Hints irukku', 'Take your time, da'], ai: ['Catch the AI out', 'Verify, always'], wrong: ['Aiyo, think again', 'Yosi… once more'], close: ['Kitta vandhuta!', 'Close, da!'], right: ['Semma!', 'Super da!'], good: ['Vera level!', 'Mass!'], bad: ['Explanations paaru', 'Read, then retry'], idle: ['Naan inga dhaan', 'Take your time', 'Padikkariya?'] },
+    telugu:  { label: 'Telugu mix', greet: ['Sunday special, ra', 'Randi, start cheddam!', 'Ready-ah?', 'Mid-week, keep going', 'Friday, brain on', 'Checkpoint day!', 'Chill, kani nerchuko'], hook: ['Mundu guess cheyyi', "Don't read ahead!"], play: ['Try cheyyi', 'Nee turn'], name: ['Now it gets a name', 'Pattern chusava?'], doit: ['Hints unnai', 'Take your time'], ai: ['Catch the AI out', 'Verify cheyyi'], wrong: ['Ayyo, malli alochinchu', 'Once more'], close: ['Daggara vachav!', 'Almost!'], right: ['Super!', 'Keka!'], good: ['Adiripoyindi!', 'Mass!'], bad: ['Explanations chudu', 'Read, then retry'], idle: ['Nenu ikkade', 'Take your time', 'Chaduvutunnava?'] },
+    kannada: { label: 'Kannada mix', greet: ['Sunday special, guru', 'Banni, start maadona!', 'Ready-na?', 'Mid-week, keep going', 'Friday, brain on', 'Checkpoint day!', 'Chill, aadre kali'], hook: ['Modalu guess maadi', "Don't read ahead!"], play: ['Try maadi', 'Nimma turn'], name: ['Now it gets a name', 'Pattern nodidra?'], doit: ['Hints ive', 'Take your time'], ai: ['Catch the AI out', 'Verify maadi'], wrong: ['Ayyo, innomme yochisi', 'Once more'], close: ['Hattira bandri!', 'Almost!'], right: ['Super!', 'Sakkath!'], good: ['Bombat!', 'Mass!'], bad: ['Explanations nodi', 'Read, then retry'], idle: ['Naanu illi iddini', 'Take your time', 'Odtidira?'] },
+  };
+  function lang() { return LANGS[window.PRAGATI_LANG] || LANGS.en; }
   const today = DAYS[new Date().getDay()];
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-  function line(key) { const v = today.lines[key]; return Array.isArray(v) ? pick(v) : v; }
+  function line(key) { if (key === 'greet') return lang().greet[new Date().getDay()]; const v = lang()[key]; return Array.isArray(v) ? pick(v) : (v || ''); }
   // Joints (viewBox coords): shoulder (60,80), elbows (36,104)/(84,104), hip (60,138). Limb groups pivot on their joint (transform-box: view-box).
   const svg = `
 <svg viewBox="0 -40 120 262" width="130" aria-hidden="true">
@@ -30,7 +38,11 @@ window.Stickman = (() => {
       <g class="arm l"><path d="M60 80 L36 104" fill="none"/><g class="fore"><path d="M36 104 L24 126" fill="none"/><circle class="hand" cx="24" cy="126" r="3.5"/></g></g>
       <g class="arm r"><path d="M60 80 L84 104" fill="none"/><g class="fore"><path d="M84 104 L96 126" fill="none"/><circle class="hand" cx="96" cy="126" r="3.5"/></g></g>
       <g class="head">
+        <path class="plait" d="M78 44 Q92 60 86 84 Q84 96 90 104" fill="none"/>
+        <circle class="plait-tie" cx="90" cy="105" r="4" fill="#ffd166" stroke="none"/>
         <circle cx="60" cy="52" r="22" fill="#fff"/>
+        <path class="fringe" d="M40 46 Q50 28 64 32 Q74 34 80 46" fill="none"/>
+        <circle class="bindi" cx="60" cy="38" r="2" fill="#e4572e" stroke="none"/>
         <g class="face">
           <circle class="eye l" cx="52" cy="48" r="2.6" fill="#1b2233"/><circle class="eye r" cx="68" cy="48" r="2.6" fill="#1b2233"/>
           <path class="brow l" d="M47 41 Q52 38 57 41" fill="none"/><path class="brow r" d="M63 41 Q68 38 73 41" fill="none"/>
@@ -54,6 +66,8 @@ window.Stickman = (() => {
   .sm .hand { fill: #fff; }
   .stickman.inline .sm path { stroke: #1b2233; } .stickman.inline .sm .head > circle { stroke: #1b2233; stroke-width: 4; } .stickman.inline .sm .hand { fill: #1b2233; }
   .sm .face path { stroke: #1b2233 !important; stroke-width: 2.6; }
+  .sm .plait { stroke-width: 7; } .sm .fringe { stroke-width: 4; }
+  .sm .bindi, .sm .plait-tie { stroke: none !important; }
   .sm .scarf { stroke: none !important; }
   .sm .bubble path { stroke: none !important; }
   .sm .arm, .sm .leg, .sm .head, .sm .fore, .sm .body, .sm .eye, .sm .mouth { transform-box: view-box; }
@@ -90,17 +104,26 @@ window.Stickman = (() => {
   .fidget-scratch .arm.r { animation: sm-scratch 3.5s ease-in-out infinite; } .fidget-scratch .arm.r .fore { animation: sm-scratch-fore 3.5s ease-in-out infinite; }
   .fidget-juggle .arm.l { animation: sm-juggle-l .6s ease-in-out infinite alternate; } .fidget-juggle .arm.r { animation: sm-juggle-r .6s ease-in-out infinite alternate-reverse; }
   .fidget-juggle .ball2 { animation: sm-juggle-ball 1.2s ease-in-out infinite; opacity: 1; }
-  @keyframes sm-sway { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
-  @keyframes sm-tap { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-6deg); } }
+  @keyframes sm-sway { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+  @keyframes sm-tap { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-12deg); } }
   @keyframes sm-stretch { 0%,70%,100% { transform: rotate(8deg); } 85% { transform: rotate(160deg); } }
   @keyframes sm-stretch-r { 0%,70%,100% { transform: rotate(-8deg); } 85% { transform: rotate(-160deg); } }
   @keyframes sm-look { 0%,100% { transform: translateX(0); } 30% { transform: translateX(3px); } 60% { transform: translateX(-3px); } }
-  @keyframes sm-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes sm-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
   @keyframes sm-scratch { 0%,60%,100% { transform: rotate(-8deg); } 75%,90% { transform: rotate(-150deg); } }
   @keyframes sm-scratch-fore { 0%,60%,100% { transform: rotate(0); } 75% { transform: rotate(-30deg); } 82% { transform: rotate(-10deg); } 90% { transform: rotate(-30deg); } }
   @keyframes sm-juggle-l { from { transform: rotate(120deg); } to { transform: rotate(135deg); } }
   @keyframes sm-juggle-r { from { transform: rotate(-120deg); } to { transform: rotate(-135deg); } }
   @keyframes sm-juggle-ball { 0% { transform: translate(28px, 60px); } 50% { transform: translate(60px, 10px); } 100% { transform: translate(92px, 60px); } }
+  /* small random actions while idle */
+  .sm.do-wave .arm.r { animation: sm-wave 1.8s ease-in-out 1; } .sm.do-wave .arm.r .fore { animation: sm-wave-fore 1.8s ease-in-out 1; }
+  .sm.do-look .head { animation: sm-lookaround 1.8s ease-in-out 1; }
+  .sm.do-stretch .arm.l { animation: sm-stretch-once 1.8s ease-in-out 1; } .sm.do-stretch .arm.r { animation: sm-stretch-once-r 1.8s ease-in-out 1; }
+  @keyframes sm-wave { 0%,100% { transform: rotate(-8deg); } 20%,80% { transform: rotate(-160deg); } }
+  @keyframes sm-wave-fore { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-35deg); } 50% { transform: rotate(10deg); } 70% { transform: rotate(-35deg); } }
+  @keyframes sm-lookaround { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-12deg); } 70% { transform: rotate(12deg); } }
+  @keyframes sm-stretch-once { 0%,100% { transform: rotate(8deg); } 50% { transform: rotate(165deg); } }
+  @keyframes sm-stretch-once-r { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(-165deg); } }
   @keyframes sm-breathe { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.012); } }
   @keyframes sm-blink { 0%,93%,100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
   .st-idle .arm.l { transform: rotate(8deg); } .st-idle .arm.r { transform: rotate(-8deg); }
@@ -141,7 +164,7 @@ window.Stickman = (() => {
     (target || document.body).appendChild(el);
     el.querySelectorAll('.scarf').forEach(p => p.setAttribute('fill', today.scarf));
     el.classList.add(today.enter);
-    set(state);
+    set(state); life();
   }
   function set(s, ms) {
     state = s; if (!el) return;
@@ -153,7 +176,18 @@ window.Stickman = (() => {
     if (!el) return; const b = el.querySelector('.bubble'); el.querySelector('.btext').textContent = t; b.setAttribute('opacity', '1');
     clearTimeout(say.t); say.t = setTimeout(() => b.setAttribute('opacity', '0'), ms);
   }
-  function remove() { if (el) el.remove(); el = null; if (observer) observer.disconnect(); observer = null; lastStep = -1; }
+  let lifeT = null;
+  function life() {
+    clearInterval(lifeT);
+    lifeT = setInterval(() => {
+      if (!el || state !== 'idle' || document.hidden) return;
+      const acts = ['wave', 'look', 'stretch', 'say'];
+      const a = pick(acts);
+      if (a === 'say') say(line('idle'), 2200);
+      else { el.querySelector('.sm').classList.add('do-' + a); setTimeout(() => el && el.querySelector('.sm').classList.remove('do-' + a), 1800); }
+    }, 7000 + Math.random() * 4000);
+  }
+  function remove() { clearInterval(lifeT); if (el) el.remove(); el = null; if (observer) observer.disconnect(); observer = null; lastStep = -1; }
   const STEP_ACTS = [
     { state: 'point', key: 'hook' },
     { state: 'talk', key: 'play' },
@@ -179,8 +213,8 @@ window.Stickman = (() => {
   function react(kind, ms = 2600) {
     // kind: wrong | close | right | good | bad | greet
     const map = { wrong: 'think', close: 'think', right: 'cheer', good: 'cheer', bad: 'think', greet: 'point' };
-    set(map[kind] || 'idle', ms); say(kind === 'greet' ? today.greet : line(kind), ms);
+    set(map[kind] || 'idle', ms); say(line(kind), ms);
   }
-  return { mount, set, say, react, remove, watchSteps, NAME, line, get today() { return today; }, get state() { return state; } };
+  return { mount, set, say, react, remove, watchSteps, NAME, line, LANGS, get today() { return today; }, get state() { return state; } };
 })();
 const Stickman = window.Stickman;

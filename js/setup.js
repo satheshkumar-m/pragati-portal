@@ -41,6 +41,7 @@ async function patchUsers(usersCol) {
     { name: 'phone', type: 'text' },
     { name: 'cohort', type: 'text' },
     { name: 'streak', type: 'number' },
+    { name: 'lang', type: 'select', values: ['en', 'hinglish', 'tamil', 'telugu', 'kannada'], maxSelect: 1 },
   ].filter(f => !have.has(f.name));
   const body = {
     fields: [...usersCol.fields, ...add],

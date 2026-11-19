@@ -26,7 +26,7 @@ async function currentWeek(user) {
 
 /* ---------- auth ---------- */
 async function renderLogin(msg = '') {
-  $('#logout').style.display = 'none'; $('#nav-progress').style.display = 'none'; $('#who').textContent = '';
+  $('#logout').style.display = 'none'; $('#nav-progress').style.display = 'none'; $('#who').textContent = ''; $('#lang').style.display = 'none';
   view.innerHTML = `
   <div class="card" style="max-width:420px;margin:30px auto">
     <h1>Sign in</h1>
@@ -71,6 +71,19 @@ function grade(questions, answers) {
   return { score, total };
 }
 
+/* ---------- language preference (Abhi's lines) ---------- */
+const LANG_KEY = 'pragati_lang';
+function applyLang(user) {
+  const l = (user && user.lang) || localStorage.getItem(LANG_KEY) || 'en';
+  window.PRAGATI_LANG = l; const sel = $('#lang'); if (sel) sel.value = l; return l;
+}
+async function setLang(user, l) {
+  localStorage.setItem(LANG_KEY, l); window.PRAGATI_LANG = l;
+  if (user && user.role !== 'admin') { try { const u = await PB.update('users', user.id, { lang: l }); user.lang = u.lang; } catch (e) { /* field not added yet: localStorage carries it */ } }
+  toast(`Abhi speaks ${window.Stickman ? Stickman.LANGS[l].label : l}`);
+  if (window.Stickman && Stickman.state !== undefined) Stickman.react('greet', 3000);
+}
+
 /* ---------- make sure helper scripts exist even when an old app.html is cached ---------- */
 function ensureScript(name, glob) {
   return new Promise(res => { if (window[glob]) return res(); const s = document.createElement('script'); s.src = `js/${name}.js?v=${Date.now()}`; s.onload = res; s.onerror = res; document.head.appendChild(s); });
@@ -82,9 +95,16 @@ const Speech = (() => {
   const ok = 'speechSynthesis' in window;
   let voice = null;
   function pickVoice() {
-    const vs = speechSynthesis.getVoices();
-    const pref = [/en-IN/i, /India/i, /en-GB/i, /en-US/i];
-    for (const p of pref) { const v = vs.find(x => p.test(x.lang) || p.test(x.name)); if (v) return v; }
+    const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+    const female = /female|heera|zira|aria|jenny|neerja|samantha|karen|moira|tessa|fiona|veena|lekha|kate|libby|sonia|natasha|google uk english female|google us english/i;
+    const male = /male|david|mark|daniel|george|ravi|prabhat|rishi|alex|fred/i;
+    const order = [
+      v => /en-IN/i.test(v.lang) && female.test(v.name),
+      v => female.test(v.name) && !male.test(v.name),
+      v => /en-IN/i.test(v.lang) && !male.test(v.name),
+      v => !male.test(v.name),
+    ];
+    for (const f of order) { const v = vs.find(f); if (v) return v; }
     return vs[0] || null;
   }
   if (ok) { voice = pickVoice(); speechSynthesis.onvoiceschanged = () => { voice = pickVoice(); }; }
@@ -100,12 +120,12 @@ const Speech = (() => {
       if (!ok) return;
       if (speechSynthesis.speaking) { speechSynthesis.cancel(); btn.textContent = '▶ Listen to this lesson'; if (window.Stickman) Stickman.set('idle'); return; }
       const u = new SpeechSynthesisUtterance(title + '. ' + textOf(html));
-      if (voice) u.voice = voice; u.rate = 0.95; u.pitch = 1;
+      if (voice) u.voice = voice; u.rate = 0.92; u.pitch = 1.08;
       u.onend = u.onerror = () => { btn.textContent = '▶ Listen to this lesson'; if (window.Stickman) Stickman.set('idle'); };
       btn.textContent = '■ Stop'; speechSynthesis.speak(u); if (window.Stickman) Stickman.set('talk');
     },
     stop() { if (ok) speechSynthesis.cancel(); },
-    say(text) { if (!ok) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); if (voice) u.voice = voice; u.rate = 0.95; speechSynthesis.speak(u); },
+    say(text) { if (!ok) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); if (voice) u.voice = voice; u.rate = 0.92; u.pitch = 1.08; speechSynthesis.speak(u); },
   };
 })();
 window.Speech = Speech;
@@ -124,51 +144,47 @@ async function renderHome(user) {
   const pAvg = pAttempts.length ? Math.round(100 * pAttempts.reduce((s, a) => s + (a.total ? a.score / a.total : 0), 0) / pAttempts.length) : null;
   let lessons = [], todaySet = null;
   if (cw) {
-    lessons = await PB.all('lessons', { filter: `week = "${cw.id}"`, sort: 'track,order' });
+    lessons = await PB.all('lessons', { filter: `week = "${cw.id}"` });
+    const TO = { stream: 0, ai: 1, academic: 2 }; lessons.sort((x, y) => (TO[x.track] - TO[y.track]) || (x.order - y.order));
     const stream = user.stream && user.stream !== 'undecided' ? user.stream : 'pcm';
     const sets = await PB.all('practice_sets', { filter: `week = "${cw.id}" && stream = "${stream}"`, sort: 'day' });
     const doneSets = new Set(pAttempts.map(a => a.set));
     todaySet = sets.find(s => !doneSets.has(s.id)) || null;
   }
   const latestSub = cw ? subs.find(s => s.week === cw.id) : null;
+  const first = user.name.split(' ')[0];
+  const nextLesson = lessons.find(l => !doneLessons.has(l.id));
+  view.classList.add('wide');
   view.innerHTML = `
-  <h1>Hi ${esc(user.name.split(' ')[0])}</h1>
-  <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
-    <div class="card stat"><b>${user.streak || 0}</b><span>day streak</span></div>
-    <div class="card stat"><b>${doneLessons.size}</b><span>lessons done</span></div>
-    <div class="card stat"><b>${pAvg === null ? '–' : pAvg + '%'}</b><span>practice avg</span></div>
-  </div>
-  ${cw ? `
-  <div class="card">
-    <div class="row spread"><span class="pill">Week ${cw.number}</span><span class="small muted">Stream: ${esc(STREAMS[user.stream || 'undecided'])}</span></div>
-    <h2 style="margin-top:8px">${esc(cw.title)}</h2>
-    <p class="muted">${esc(cw.summary)}</p>
-    <ul class="list">
-      ${lessons.map(l => `<li><div><span class="pill ${l.track}">${TRACK[l.track]}</span> <a href="#lesson/${l.id}">${esc(l.title)}</a><div class="small muted">${l.minutes || 20} min</div></div>${doneLessons.has(l.id) ? '<span class="pill ok">Done</span>' : '<a class="btn secondary" href="#lesson/' + l.id + '">Start</a>'}</li>`).join('')}
-      ${!lessons.length ? '<li class="muted">Lessons for this week are being prepared.</li>' : ''}
-    </ul>
-  </div>
-  <div class="card">
-    <h3>Today's practice</h3>
-    ${todaySet ? `<p>${esc(todaySet.title)} · ${todaySet.questions.length} questions · about 20 minutes</p><a class="btn" href="#practice/${todaySet.id}">Start practice</a>`
-      : `<p class="muted">${cw.number < 3 ? 'Daily practice starts in week 3, after you pick a stream.' : 'All sets for this week are done. Nice.'}</p>`}
-  </div>
-  <div class="card">
-    <h3>Friday checkpoint</h3>
-    ${latestSub ? `<p>Status: <span class="pill ${latestSub.status === 'approved' ? 'ok' : latestSub.status === 'revise' ? 'warn' : ''}">${latestSub.status}</span>${latestSub.feedback ? `<br><span class="small">Feedback: ${esc(latestSub.feedback)}</span>` : ''}</p>` : '<p class="muted">Not submitted yet. Due Friday.</p>'}
-    <a class="btn secondary" href="#project">Submit or update</a>
-  </div>` : `<div class="card"><p>Your first week unlocks on ${fmtDate(ws[0]?.unlock_date)}. Until then, the parent and student guide is in your WhatsApp group.</p></div>`}
-  <div class="card">
-    <h3>All weeks</h3>
-    <ul class="list">${ws.map(w => `<li><div><b>Week ${w.number}</b> · ${esc(w.title)}</div>${unlocked(w, user) ? '<span class="pill ok">Open</span>' : `<span class="pill locked">${fmtDate(w.unlock_date)}</span>`}</li>`).join('')}</ul>
-  </div>
-  <div class="card"><h3>Stuck on something?</h3><p class="muted small">Ask here. A person reads every question and answers within a day.</p><a class="btn secondary" href="#ask">Ask the tutor</a></div>`;
+  <div class="dash">
+    <div class="dash-main">
+      <div class="dash-head"><h1>Hi ${esc(first)}</h1><p class="muted">${cw ? `Week ${cw.number} of 8` : 'Your course starts soon'}${nextLesson ? ` · next up: <a href="#lesson/${nextLesson.id}">${esc(nextLesson.title)}</a>` : cw ? ' · this week is done' : ''}</p></div>
+      ${cw ? `
+      <div class="card notebook">
+        <div class="row spread"><span class="pill">Week ${cw.number}</span><span class="small muted">Stream: ${esc(STREAMS[user.stream || 'undecided'])}</span></div>
+        <h2 style="margin-top:8px">${esc(cw.title)}</h2>
+        <p class="muted">${esc(cw.summary)}</p>
+        <ol class="lessons">
+          ${lessons.map((l, i) => `<li class="${doneLessons.has(l.id) ? 'done' : ''}"><span class="num">${i + 1}</span><div class="t"><a href="#lesson/${l.id}">${esc(l.title)}</a><div class="small muted"><span class="pill ${l.track}">${TRACK[l.track]}</span> ${l.minutes || 20} min</div></div>${doneLessons.has(l.id) ? '<span class="pill ok">Done</span>' : `<a class="btn ${nextLesson && nextLesson.id === l.id ? 'primary' : 'secondary'}" href="#lesson/${l.id}">${nextLesson && nextLesson.id === l.id ? 'Continue' : 'Open'}</a>`}</li>`).join('')}
+          ${!lessons.length ? '<li class="muted">Lessons for this week are being prepared.</li>' : ''}
+        </ol>
+      </div>` : `<div class="card"><p>Your first week unlocks on ${fmtDate(ws[0]?.unlock_date)}. Until then, the parent and student guide is in your WhatsApp group.</p></div>`}
+      <div class="card">
+        <h3>All weeks</h3>
+        <ul class="list">${ws.map(w => `<li><div><b>Week ${w.number}</b> · ${esc(w.title)}</div>${unlocked(w, user) ? '<span class="pill ok">Open</span>' : `<span class="pill locked">${fmtDate(w.unlock_date)}</span>`}</li>`).join('')}</ul>
+      </div>
+    </div>
+    <aside class="dash-side">
+      <div class="card stats"><div class="stat"><b>${user.streak || 0}</b><span>day streak</span></div><div class="stat"><b>${doneLessons.size}</b><span>lessons done</span></div><div class="stat"><b>${pAvg === null ? '–' : pAvg + '%'}</b><span>practice avg</span></div></div>
+      ${cw ? `<div class="card"><h3>Today's practice</h3>${todaySet ? `<p>${esc(todaySet.title)} · ${todaySet.questions.length} questions · about 20 minutes</p><a class="btn primary" href="#practice/${todaySet.id}">Start practice</a>` : `<p class="muted">${cw.number < 3 ? 'Daily practice starts in week 3, after you pick a stream.' : 'All sets for this week are done. Nice.'}</p>`}</div>
+      <div class="card"><h3>Friday checkpoint</h3>${latestSub ? `<p>Status: <span class="pill ${latestSub.status === 'approved' ? 'ok' : latestSub.status === 'revise' ? 'warn' : ''}">${latestSub.status}</span>${latestSub.feedback ? `<br><span class="small">Feedback: ${esc(latestSub.feedback)}</span>` : ''}</p>` : '<p class="muted">Not submitted yet. Due Friday.</p>'}<a class="btn secondary" href="#project">Submit or update</a></div>` : ''}
+      <div class="card"><h3>Stuck on something?</h3><p class="muted small">A person reads every question and answers within a day.</p><a class="btn secondary" href="#ask">Ask Abhi</a></div>
+      <div class="card mentor-card"><div id="home-mentor"></div></div>
+    </aside>
+  </div>`;
+  await helpersReady; Stickman.mount($('#home-mentor'), 'inline'); Stickman.react('greet', 3500);
 }
 
-async function contentFile() {
-  if (!cache.content) cache.content = fetch('content/week1.json?v=' + (document.querySelector('script[src*="app.js"]')?.src.split('v=')[1] || Date.now())).then(r => r.json()).catch(() => null);
-  return cache.content;
-}
 async function renderLesson(user, id) {
   const l = await PB.getOne('lessons', id, 'week');
   const cf = await contentFile();
@@ -444,6 +460,7 @@ async function route() {
   const user = PB.isLoggedIn() ? (PB.user || await PB.refresh()) : null;
   if (!user) return renderLogin();
   $('#logout').style.display = ''; $('#who').textContent = user.role === 'admin' ? 'admin' : user.name.split(' ')[0];
+  $('#lang').style.display = user.role === 'student' ? '' : 'none'; applyLang(user); $('#lang').onchange = e => setLang(user, e.target.value);
   $('#nav-progress').style.display = user.role === 'student' ? '' : 'none';
   const [path, arg] = location.hash.replace('#', '').split('/');
   view.innerHTML = '<p class="muted">Loading…</p>'; view.classList.remove('wide');

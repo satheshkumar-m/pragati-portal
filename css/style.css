@@ -172,7 +172,7 @@ details summary { font-weight: 600; cursor: pointer; }
 #log { max-height: 320px; overflow: auto; background: #f7f8fb; border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
 .video { aspect-ratio: 16/9; width: 100%; border: 0; border-radius: var(--r); background: #000; }
 
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
 
 .wrap.wide { max-width: none; padding: 0; }
 
@@ -199,3 +199,20 @@ details summary { font-weight: 600; cursor: pointer; }
 .cards .yes { background: var(--chalk); color: var(--ink); } .cards .no { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.2); }
 .cards .bar { display: grid; grid-template-columns: 1fr 44px; gap: 8px; align-items: center; margin: 8px 0; } .cards .bar span { grid-column: 1 / -1; font-size: .95rem; }
 .cards .bar i { display: block; height: 10px; border-radius: 999px; background: var(--chalk); transition: width .6s ease; } .cards .bar b { text-align: right; color: var(--chalk); }
+
+/* dashboard */
+.dash { max-width: 1560px; margin: 0 auto; padding: 22px 28px; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; }
+@media (max-width: 1040px) { .dash { grid-template-columns: 1fr; padding: 12px; } }
+.dash-head h1 { color: #fff; } .dash-head p { color: rgba(255,255,255,.65); } .dash-head a { color: var(--chalk); }
+.dash .stats { display: grid; grid-template-columns: repeat(3, 1fr); padding: 8px; }
+.lessons { list-style: none; margin: 10px 0 0; padding: 0; }
+.lessons li { display: grid; grid-template-columns: 40px 1fr auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); }
+.lessons li:first-child { border-top: 0; }
+.lessons .num { width: 36px; height: 36px; border-radius: 50%; background: var(--night); color: var(--chalk); font-family: var(--display); font-weight: 700; display: grid; place-items: center; }
+.lessons li.done .num { background: var(--brand-2); color: #fff; }
+.lessons .t a { font-family: var(--display); font-size: 1.15rem; font-weight: 600; color: var(--ink); text-decoration: none; }
+.lessons .t .pill { font-size: .72rem; padding: 2px 8px; }
+.mentor-card { display: grid; place-items: center; background: transparent; box-shadow: none; }
+.mentor-card .stickman.inline { width: 150px; } .mentor-card .stickman.inline .name { color: rgba(255,255,255,.7); }
+.mentor-card .stickman.inline .sm path { stroke: #fff; } .mentor-card .stickman.inline .sm .head > circle { stroke: #fff; } .mentor-card .stickman.inline .sm .hand { fill: #fff; } .mentor-card .stickman.inline .sm .face path { stroke: #1b2233 !important; }
+#view.wide > h1 { padding: 0 28px; }

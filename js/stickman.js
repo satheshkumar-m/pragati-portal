@@ -61,6 +61,7 @@ window.Stickman = (() => {
         <g class="head"><circle cx="198" cy="156" r="22" fill="#fff"/>
           <g class="crown" transform="rotate(20 198 156)"><path d="M182 137 L185 121 L193 131 L198 117 L203 131 L211 121 L214 137 Z" fill="#f4b400" stroke="#b8860b" stroke-width="2"/><circle cx="185.5" cy="121.5" r="2.2" fill="#ff5c8a" stroke="none"/><circle cx="198" cy="117.5" r="2.6" fill="#4fd1c5" stroke="none"/><circle cx="210.5" cy="121.5" r="2.2" fill="#ff5c8a" stroke="none"/></g>
           <g class="face"><path d="M186 152 Q190 149 194 152" fill="none"/><path d="M202 152 Q206 149 210 152" fill="none"/><path d="M190 164 Q198 170 206 164" fill="none"/><text x="226" y="128" font-size="13" font-family="Public Sans, sans-serif" fill="#fff" stroke="none" class="zz">z z</text></g>
+          <g class="thought" opacity="0"><circle cx="226" cy="132" r="3" fill="#fff" stroke="none"/><circle cx="234" cy="122" r="5" fill="#fff" stroke="none"/><ellipse cx="252" cy="106" rx="22" ry="13" fill="#fff" stroke="none"/><text class="ttext" x="252" y="111" text-anchor="middle" font-size="13" font-weight="700" font-family="Public Sans, sans-serif" fill="#1b2233" stroke="none">?</text></g>
         </g>
     </g>
     <g class="body-extra">
@@ -153,7 +154,16 @@ window.Stickman = (() => {
   @keyframes sm-blink { 0%,93%,100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
   .sm .lying, .sm .body { transition: opacity .5s; }
   .st-lie .body { opacity: 0; } .st-lie .lying { opacity: 1; }
-  .st-lie .lying .zz { animation: sm-zz 2.4s ease-in-out infinite; } @keyframes sm-zz { 0%,100% { opacity: .2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-6px); } }
+  .st-lie .lying .zz { animation: sm-zz 2.4s ease-in-out infinite; }
+  .sm .lying { transform-box: view-box; transform-origin: 60px 200px; transition: transform .8s ease-in-out; }
+  .sm .lying.flipped { transform: scaleX(-1); }
+  .sm .lying.rest-crown .crown { animation: sm-crown 1.6s ease-in-out 1; transform-box: fill-box; transform-origin: center; }
+  @keyframes sm-crown { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-14deg) translateY(-3px); } 50% { transform: rotate(10deg); } 75% { transform: rotate(-6deg); } }
+  .sm .lying.rest-think .thought, .sm .lying.rest-wait .thought { opacity: 1; transition: opacity .3s; }
+  .sm .lying.rest-think .zz, .sm .lying.rest-wait .zz { opacity: 0; }
+  .sm .lying.rest-think .face path:nth-child(1), .sm .lying.rest-think .face path:nth-child(2) { d: path("M186 150 Q190 154 194 150"); }
+  .sm .lying.rest-wait .hand { animation: sm-tapfinger .35s ease-in-out 6 alternate; transform-box: fill-box; transform-origin: center; }
+  @keyframes sm-tapfinger { from { transform: translateY(0); } to { transform: translateY(-4px); } } @keyframes sm-zz { 0%,100% { opacity: .2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-6px); } }
   .stickman.inline .sm .lying .zz { fill: #1b2233; }
   .st-idle .arm.l { transform: rotate(8deg); } .st-idle .arm.r { transform: rotate(-8deg); }
   .st-talk .arm.r { animation: sm-gesture 1.2s ease-in-out infinite; }
@@ -217,9 +227,24 @@ window.Stickman = (() => {
   function rest() {
     if (!el || lying || walking || state !== 'idle') return;
     const z = zone(); lying = true;
-    walkTo(z.minX, 16, () => { if (!el || !lying) return; state = 'lie'; el.querySelector('.sm').setAttribute('class', 'sm st-lie'); });
+    walkTo(z.minX, 16, () => { if (!el || !lying) return; state = 'lie'; el.querySelector('.sm').setAttribute('class', 'sm st-lie'); restActions(); });
+  }
+  let restActT = null;
+  function restActions() {
+    clearInterval(restActT);
+    restActT = setInterval(() => {
+      if (!el || !lying || state !== 'lie') return;
+      const ly = el.querySelector('.lying'); ly.classList.remove('rest-crown', 'rest-think', 'rest-wait');
+      const r = Math.random();
+      if (r < 0.25) ly.classList.toggle('flipped');
+      else if (r < 0.5) ly.classList.add('rest-crown');
+      else if (r < 0.75) { ly.querySelector('.ttext').textContent = '?'; ly.classList.add('rest-think'); }
+      else { ly.querySelector('.ttext').textContent = '…'; ly.classList.add('rest-wait'); }
+      setTimeout(() => ly && ly.classList.remove('rest-crown', 'rest-think', 'rest-wait'), 2600);
+    }, 6000 + Math.random() * 4000);
   }
   function wake() {
+    clearInterval(restActT); const ly = el && el.querySelector('.lying'); if (ly) ly.classList.remove('flipped', 'rest-crown', 'rest-think', 'rest-wait');
     lying = false; if (!el) return; set('idle'); say(line('idle'), 1800);
   }
   function startRoam(z) {
@@ -260,7 +285,7 @@ window.Stickman = (() => {
       else { el.querySelector('.sm').classList.add('do-' + a); setTimeout(() => el && el.querySelector('.sm').classList.remove('do-' + a), 1800); }
     }, 7000 + Math.random() * 4000);
   }
-  function remove() { clearInterval(lifeT); clearInterval(roamT); clearInterval(restT); walking = false; lying = false; if (el) el.remove(); el = null; if (observer) observer.disconnect(); observer = null; lastStep = -1; }
+  function remove() { clearInterval(lifeT); clearInterval(roamT); clearInterval(restT); clearInterval(restActT); walking = false; lying = false; if (el) el.remove(); el = null; if (observer) observer.disconnect(); observer = null; lastStep = -1; }
   const STEP_ACTS = [
     { state: 'point', key: 'hook' },
     { state: 'talk', key: 'play' },

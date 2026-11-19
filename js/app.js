@@ -421,7 +421,7 @@ async function renderAdmin(user, tab = 'queue') {
     const byWeek = (a, b) => (a.expand?.week?.number || 0) - (b.expand?.week?.number || 0);
     const [ls, ss] = await Promise.all([PB.all('lessons', { expand: 'week', sort: 'track,order' }), PB.all('practice_sets', { expand: 'week', sort: 'stream,day' })]);
     ls.sort(byWeek); ss.sort(byWeek);
-    body = `<p class="muted small">Toggle approval. Content itself is edited in the PocketBase admin panel (<a href="/_/" target="_blank" rel="noopener">open</a>) or by uploading a new content file.</p>
+    body = `<p class="muted small">Toggle approval. Content itself lives in <code>content/week1.json</code> in the repo; every deploy updates lessons automatically.</p>
       <h2>Lessons</h2><ul class="list">${ls.map(l => `<li data-col="lessons" data-id="${l.id}"><div>W${l.expand?.week?.number} <span class="pill ${l.track}">${TRACK[l.track]}</span> ${esc(l.title)}</div><button class="toggle ghost">${l.approved ? 'Approved ✓' : 'Approve'}</button></li>`).join('')}</ul>
       <h2>Practice sets</h2><ul class="list">${ss.map(s => `<li data-col="practice_sets" data-id="${s.id}"><div>W${s.expand?.week?.number} · ${s.stream} · day ${s.day} · ${esc(s.title)}</div><button class="toggle ghost">${s.approved ? 'Approved ✓' : 'Approve'}</button></li>`).join('')}</ul>`;
   }

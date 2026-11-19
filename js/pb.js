@@ -17,7 +17,7 @@ const PB = (() => {
     return false;
   }
   // keep the backend warm while the portal is open
-  setInterval(() => { if (!document.hidden) fetch(BASE + '/api/health', { cache: 'no-store' }).catch(() => {}); }, 150000);
+  setInterval(() => { if (!document.hidden) fetch(BASE + '/api/health', { cache: 'no-store' }).catch(() => {}); }, 600000);
   async function req(path, { method = 'GET', body, form, retry = true, token } = {}) {
     if (!awake) await wake();
     const headers = {};

@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /
+# API routes
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+# never serve config or uploads directly
+<FilesMatch "^(config\.php|install\.lock)$">
+  Require all denied
+</FilesMatch>
+# cache static assets briefly
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+</IfModule>

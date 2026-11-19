@@ -185,6 +185,10 @@ async function renderHome(user) {
   await helpersReady; Stickman.mount($('#home-mentor'), 'inline'); Stickman.react('greet', 3500);
 }
 
+async function contentFile() {
+  if (!cache.content) cache.content = fetch('content/week1.json?v=' + (document.querySelector('script[src*="app.js"]')?.src.split('v=')[1] || Date.now())).then(r => r.json()).catch(() => null);
+  return cache.content;
+}
 async function renderLesson(user, id) {
   const l = await PB.getOne('lessons', id, 'week');
   const cf = await contentFile();

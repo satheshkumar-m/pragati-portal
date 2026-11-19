@@ -3,6 +3,19 @@
 window.Stickman = (() => {
   let el = null, state = 'idle', timer = null, observer = null, lastStep = -1, onStep = null;
   const NAME = 'Abhi';
+  // Seven personalities, one per weekday. Lines are English with a Tamil touch.
+  const DAYS = [
+    { scarf: '#ff8fab', enter: 'enter-fade',  fidget: 'fidget-sway',    greet: 'Sunday special, da', lines: { hook: 'Guess first, paaru', play: 'Guess, then throw', name: 'See the square?', doit: 'Hints irukku', ai: 'Catch the AI out', wrong: ['Aiyo, think again', 'Yosi… once more'], close: ['Close, da!'], right: ['Semma!', 'Super da!'], good: ['Mass performance!'], bad: ['Read the explanations, seri?'] } },
+    { scarf: '#ffd166', enter: 'enter-walk',  fidget: 'fidget-tap',     greet: 'Vaa, let\'s start!', lines: { hook: 'Guess first!', play: 'Guess, then throw', name: 'See the square?', doit: 'Use the hints', ai: 'Catch the AI out', wrong: ['Yosi… think again', 'Enna? Try again'], close: ['Almost, da!'], right: ['Super da!', 'Semma!'], good: ['Vera level!'], bad: ['Explanations paaru'] } },
+    { scarf: '#7fd1ae', enter: 'enter-drop',  fidget: 'fidget-stretch', greet: 'Ready-ah?', lines: { hook: 'Paaru, guess first', play: 'Throw and see', name: 'Square-u, notice?', doit: 'Hints are free', ai: 'Trust, but verify', wrong: ['Aiyo! Again', 'Hmm… think'], close: ['So close!'], right: ['Sema!', 'Correct, da!'], good: ['Thalaiva!'], bad: ['Slow down, read again'] } },
+    { scarf: '#9ecbff', enter: 'enter-slide', fidget: 'fidget-look',    greet: 'Mid-week, machi', lines: { hook: 'Don\'t read ahead!', play: 'Guess. Then throw', name: 'Double gives four', doit: 'Take your time', ai: 'AI can be wrong, da', wrong: ['Enna da? Retry', 'Yosi, yosi'], close: ['Nearly!'], right: ['Super!', 'Mass!'], good: ['Padips! Brilliant'], bad: ['One more read, seri?'] } },
+    { scarf: '#f4a261', enter: 'enter-spin',  fidget: 'fidget-bounce',  greet: 'Physics time, da', lines: { hook: 'Guess before reading', play: 'Three throws, minimum', name: 'That is the square', doit: 'You saw all this', ai: 'Catch the slip', wrong: ['Aiyo, think', 'Try once more'], close: ['Kitta vandhuta!'], right: ['Semma da!', 'Correct!'], good: ['Top class!'], bad: ['Paaru the explanations'] } },
+    { scarf: '#c77dff', enter: 'enter-pop',   fidget: 'fidget-scratch', greet: 'Checkpoint day!', lines: { hook: 'Guess first, machi', play: 'Throw it, paaru', name: 'Name it now', doit: 'Hints irukku', ai: 'Verify, always', wrong: ['Hmm… again', 'Yosi…'], close: ['Close, close!'], right: ['Vera level!', 'Semma!'], good: ['Weekend earned!'], bad: ['Read, then retry'] } },
+    { scarf: '#ffe08a', enter: 'enter-walk',  fidget: 'fidget-juggle',  greet: 'Chill, but learn', lines: { hook: 'Guess first!', play: 'Guess, throw, repeat', name: 'See the square?', doit: 'Easy ones, paaru', ai: 'Catch the AI out', wrong: ['Aiyo!', 'Think again, da'], close: ['Almost!'], right: ['Super da!', 'Mass!'], good: ['Saturday star!'], bad: ['Explanations first'] } },
+  ];
+  const today = DAYS[new Date().getDay()];
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  function line(key) { const v = today.lines[key]; return Array.isArray(v) ? pick(v) : v; }
   // Joints (viewBox coords): shoulder (60,80), elbows (36,104)/(84,104), hip (60,138). Limb groups pivot on their joint (transform-box: view-box).
   const svg = `
 <svg viewBox="0 -40 120 262" width="130" aria-hidden="true">
@@ -52,6 +65,42 @@ window.Stickman = (() => {
   .sm .eye { transform-origin: center; transform-box: fill-box; animation: sm-blink 4.5s infinite; }
   .sm .mouth { transform-origin: 60px 60px; }
   .sm .arm, .sm .head, .sm .fore { transition: transform .35s cubic-bezier(.3,1.4,.5,1); }
+  /* entrances (one per weekday) */
+  .stickman.enter-walk .sm { animation: sm-enter-walk 1.1s ease-out both; }
+  .stickman.enter-walk .leg.l { animation: sm-step .28s ease-in-out 4 alternate; } .stickman.enter-walk .leg.r { animation: sm-step .28s ease-in-out 4 alternate-reverse; }
+  .stickman.enter-drop .sm { animation: sm-enter-drop .9s cubic-bezier(.3,1.5,.5,1) both; }
+  .stickman.enter-fade .sm { animation: sm-enter-fade 1s ease-out both; }
+  .stickman.enter-slide .sm { animation: sm-enter-slide .8s ease-out both; }
+  .stickman.enter-spin .sm { animation: sm-enter-spin .9s ease-out both; }
+  .stickman.enter-pop .sm { animation: sm-enter-pop .7s cubic-bezier(.3,1.6,.5,1) both; }
+  .sm { transform-box: view-box; transform-origin: 60px 210px; }
+  @keyframes sm-enter-walk { from { transform: translateX(-90px); } to { transform: translateX(0); } }
+  @keyframes sm-step { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+  @keyframes sm-enter-drop { from { transform: translateY(-160px); } to { transform: translateY(0); } }
+  @keyframes sm-enter-fade { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+  @keyframes sm-enter-slide { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes sm-enter-spin { from { transform: rotate(-200deg) scale(.4); opacity: 0; } to { transform: rotate(0) scale(1); opacity: 1; } }
+  @keyframes sm-enter-pop { from { transform: scale(0); } to { transform: scale(1); } }
+  /* idle fidgets (one per weekday) */
+  .fidget-sway .body { animation: sm-sway 3s ease-in-out infinite; }
+  .fidget-tap .leg.r { animation: sm-tap 1s ease-in-out infinite; }
+  .fidget-stretch .arm.l { animation: sm-stretch 4s ease-in-out infinite; } .fidget-stretch .arm.r { animation: sm-stretch-r 4s ease-in-out infinite; }
+  .fidget-look .eye { animation: sm-look 5s ease-in-out infinite, sm-blink 4.5s infinite; }
+  .fidget-bounce .body { animation: sm-bounce 1.4s ease-in-out infinite; }
+  .fidget-scratch .arm.r { animation: sm-scratch 3.5s ease-in-out infinite; } .fidget-scratch .arm.r .fore { animation: sm-scratch-fore 3.5s ease-in-out infinite; }
+  .fidget-juggle .arm.l { animation: sm-juggle-l .6s ease-in-out infinite alternate; } .fidget-juggle .arm.r { animation: sm-juggle-r .6s ease-in-out infinite alternate-reverse; }
+  .fidget-juggle .ball2 { animation: sm-juggle-ball 1.2s ease-in-out infinite; opacity: 1; }
+  @keyframes sm-sway { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+  @keyframes sm-tap { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-6deg); } }
+  @keyframes sm-stretch { 0%,70%,100% { transform: rotate(8deg); } 85% { transform: rotate(160deg); } }
+  @keyframes sm-stretch-r { 0%,70%,100% { transform: rotate(-8deg); } 85% { transform: rotate(-160deg); } }
+  @keyframes sm-look { 0%,100% { transform: translateX(0); } 30% { transform: translateX(3px); } 60% { transform: translateX(-3px); } }
+  @keyframes sm-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes sm-scratch { 0%,60%,100% { transform: rotate(-8deg); } 75%,90% { transform: rotate(-150deg); } }
+  @keyframes sm-scratch-fore { 0%,60%,100% { transform: rotate(0); } 75% { transform: rotate(-30deg); } 82% { transform: rotate(-10deg); } 90% { transform: rotate(-30deg); } }
+  @keyframes sm-juggle-l { from { transform: rotate(120deg); } to { transform: rotate(135deg); } }
+  @keyframes sm-juggle-r { from { transform: rotate(-120deg); } to { transform: rotate(-135deg); } }
+  @keyframes sm-juggle-ball { 0% { transform: translate(28px, 60px); } 50% { transform: translate(60px, 10px); } 100% { transform: translate(92px, 60px); } }
   @keyframes sm-breathe { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.012); } }
   @keyframes sm-blink { 0%,93%,100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
   .st-idle .arm.l { transform: rotate(8deg); } .st-idle .arm.r { transform: rotate(-8deg); }
@@ -90,11 +139,13 @@ window.Stickman = (() => {
     if (el) el.remove();
     el = document.createElement('div'); el.className = 'stickman ' + (cls || (target ? 'inline' : '')); el.innerHTML = svg + `<div class="name">${NAME}</div>`;
     (target || document.body).appendChild(el);
+    el.querySelectorAll('.scarf').forEach(p => p.setAttribute('fill', today.scarf));
+    el.classList.add(today.enter);
     set(state);
   }
   function set(s, ms) {
     state = s; if (!el) return;
-    el.querySelector('.sm').setAttribute('class', 'sm st-' + s);
+    el.querySelector('.sm').setAttribute('class', 'sm st-' + s + (s === 'idle' ? ' ' + today.fidget : ''));
     clearTimeout(timer);
     if (ms) timer = setTimeout(() => set('idle'), ms);
   }
@@ -104,11 +155,11 @@ window.Stickman = (() => {
   }
   function remove() { if (el) el.remove(); el = null; if (observer) observer.disconnect(); observer = null; lastStep = -1; }
   const STEP_ACTS = [
-    { state: 'point', line: 'Guess first!' },
-    { state: 'throw', line: 'Guess, then throw' },
-    { state: 'think', line: 'See the square?' },
-    { state: 'point', line: 'Use the hints' },
-    { state: 'talk', line: 'Catch the AI out' },
+    { state: 'point', key: 'hook' },
+    { state: 'throw', key: 'play' },
+    { state: 'think', key: 'name' },
+    { state: 'point', key: 'doit' },
+    { state: 'talk', key: 'ai' },
   ];
   function watchSteps(steps, cb) {
     onStep = cb || null;
@@ -120,11 +171,16 @@ window.Stickman = (() => {
         if (!e.isIntersecting) return;
         const i = list.indexOf(e.target); if (i === lastStep) return; lastStep = i;
         const act = STEP_ACTS[i] || STEP_ACTS[0];
-        set(act.state, 2600); say(act.line, 2600); if (onStep) onStep(i);
+        set(act.state, 2600); say(line(act.key), 2600); if (onStep) onStep(i);
       });
     }, { rootMargin: '-25% 0px -60% 0px', threshold: 0 });
     list.forEach(st => observer.observe(st));
   }
-  return { mount, set, say, remove, watchSteps, NAME, get state() { return state; } };
+  function react(kind, ms = 2600) {
+    // kind: wrong | close | right | good | bad | greet
+    const map = { wrong: 'think', close: 'think', right: 'cheer', good: 'cheer', bad: 'think', greet: 'point' };
+    set(map[kind] || 'idle', ms); say(kind === 'greet' ? today.greet : line(kind), ms);
+  }
+  return { mount, set, say, react, remove, watchSteps, NAME, line, get today() { return today; }, get state() { return state; } };
 })();
 const Stickman = window.Stickman;

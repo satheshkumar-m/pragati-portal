@@ -105,8 +105,10 @@ const Speech = (() => {
       btn.textContent = '■ Stop'; speechSynthesis.speak(u); if (window.Stickman) Stickman.set('talk');
     },
     stop() { if (ok) speechSynthesis.cancel(); },
+    say(text) { if (!ok) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); if (voice) u.voice = voice; u.rate = 0.95; speechSynthesis.speak(u); },
   };
 })();
+window.Speech = Speech;
 window.addEventListener('hashchange', () => { Speech.stop(); if (window.Stickman) Stickman.remove(); });
 
 /* ---------- student ---------- */
@@ -166,8 +168,9 @@ async function renderHome(user) {
 async function renderLesson(user, id) {
   const l = await PB.getOne('lessons', id, 'week');
   const existing = await PB.first('attempts', { filter: `user = "${user.id}" && lesson = "${id}"` });
+  if (existing && existing.answers && !Array.isArray(existing.answers)) existing.answers = existing.answers.answers || [];
   const qs = l.questions || [];
-  const body = (l.body || '').replace(/<p>\s*\[\[widget:([a-z0-9-]+)\]\]\s*<\/p>|\[\[widget:([a-z0-9-]+)\]\]/g, (m, x, y) => `<div data-widget="${x || y}"></div>`);
+  const body = (l.body || '').replace(/<p>\s*\[\[widget:([a-z0-9-]+)(?::([a-z0-9-]+))?\]\]\s*<\/p>|\[\[widget:([a-z0-9-]+)(?::([a-z0-9-]+))?\]\]/g, (m, x, xa, y, ya) => `<div data-widget="${x || y}" data-arg="${xa || ya || ''}"></div>`);
   const stepNames = ['Hook', 'Play', 'Name it', 'Do it', 'AI twist'];
   const trackName = { stream: 'Stream taster', ai: 'AI', academic: 'Class 11' }[l.track];
   view.classList.add('wide');
@@ -201,20 +204,22 @@ async function renderLesson(user, id) {
   await helpersReady;
   const wide = window.innerWidth > 1040;
   Stickman.mount(wide ? $('#rail-mentor') : $('#sm-slot'), wide ? 'rail-mount' : 'inline');
-  Stickman.set('point', 3500); Stickman.say('Read this first', 3500);
+  Stickman.react('greet', 3500);
   const steps = [...view.querySelectorAll('.lesson-body .step'), $('#check')].filter(Boolean);
   const railItems = view.querySelectorAll('#rail-steps li'), miniItems = view.querySelectorAll('#mini-steps i');
   Stickman.watchSteps(steps, i => {
     railItems.forEach((li, j) => { li.classList.toggle('active', j === i); li.classList.toggle('done', j < i); });
     miniItems.forEach((it, j) => { it.classList.toggle('active', j === i); it.classList.toggle('done', j < i); });
   });
-  document.querySelectorAll('[data-widget]').forEach(el => { const w = window.Widgets && Widgets[el.dataset.widget]; if (w) w(el); });
+  let deckTally = null;
+  const ctx = { pb: null, user, lessonId: id, onDeck: t => { deckTally = t; toast('Noted. Now the three questions below.'); } };
+  document.querySelectorAll('[data-widget]').forEach(el => { const w = window.Widgets && Widgets[el.dataset.widget]; if (w) { try { w(el, ctx, el.dataset.arg); } catch (e) { console.error(e); } } });
   const save = async answers => {
     const { score, total } = grade(qs, answers);
-    await PB.create('attempts', { user: user.id, lesson: id, answers, score, total });
+    await PB.create('attempts', { user: user.id, lesson: id, answers: deckTally ? { answers, tally: deckTally } : answers, score, total });
     toast(total ? `Scored ${score}/${total}` : 'Saved'); await renderLesson(user, id);
     location.hash = location.hash; document.getElementById('check')?.scrollIntoView({ block: 'start' });
-    if (window.Stickman && total) { if (score / total >= 0.75) Stickman.set('cheer', 3000); else { Stickman.set('think'); Stickman.say('Read the explanations', 3500); } }
+    if (window.Stickman && total) Stickman.react(score / total >= 0.75 ? 'good' : 'bad', 3500);
   };
   $('#submit-q')?.addEventListener('click', () => {
     const a = collectAnswers(qs);

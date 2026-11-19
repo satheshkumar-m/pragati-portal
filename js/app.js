@@ -230,7 +230,7 @@ async function renderLesson(user, id) {
   </div>`;
   await helpersReady;
   const wide = window.innerWidth > 1040;
-  Stickman.mount(wide ? $('#rail-mentor') : $('#sm-slot'), wide ? 'rail-mount' : 'inline');
+  Stickman.mount(wide ? null : $('#sm-slot'), wide ? 'roam' : 'inline', wide ? { zone: $('#rail-steps') } : null);
   Stickman.react('greet', 3500);
   const steps = [...view.querySelectorAll('.lesson-body .step'), $('#check')].filter(Boolean);
   const railItems = view.querySelectorAll('#rail-steps li'), miniItems = view.querySelectorAll('#mini-steps i');

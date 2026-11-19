@@ -95,7 +95,7 @@ footer { text-align: center; color: rgba(255,255,255,.45); font-size: .82rem; pa
 .rail li.done::before { background: var(--brand-2); border-color: var(--brand-2); }
 .rail .back { color: rgba(255,255,255,.6); text-decoration: none; font-size: .9rem; display: inline-block; margin-bottom: 14px; }
 .rail .back:hover { color: #fff; }
-.rail .mentor { margin-top: 18px; }
+.rail .mentor { margin-top: 18px; min-height: 10px; }
 
 .lesson-head .meta { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 0; }
 .lesson-head .meta span { font-size: .85rem; color: var(--ink-2); background: #f3f5f9; padding: 5px 11px; border-radius: 999px; }

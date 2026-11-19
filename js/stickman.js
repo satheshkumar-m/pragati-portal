@@ -38,11 +38,8 @@ window.Stickman = (() => {
       <g class="arm l"><path d="M60 80 L36 104" fill="none"/><g class="fore"><path d="M36 104 L24 126" fill="none"/><circle class="hand" cx="24" cy="126" r="3.5"/></g></g>
       <g class="arm r"><path d="M60 80 L84 104" fill="none"/><g class="fore"><path d="M84 104 L96 126" fill="none"/><circle class="hand" cx="96" cy="126" r="3.5"/></g></g>
       <g class="head">
-        <path class="plait" d="M78 44 Q92 60 86 84 Q84 96 90 104" fill="none"/>
-        <circle class="plait-tie" cx="90" cy="105" r="4" fill="#ffd166" stroke="none"/>
         <circle cx="60" cy="52" r="22" fill="#fff"/>
-        <path class="fringe" d="M40 46 Q50 28 64 32 Q74 34 80 46" fill="none"/>
-        <circle class="bindi" cx="60" cy="38" r="2" fill="#e4572e" stroke="none"/>
+        <g class="crown"><path d="M44 33 L47 17 L55 27 L60 13 L65 27 L73 17 L76 33 Z" fill="#f4b400" stroke="#b8860b" stroke-width="2"/><circle cx="47.5" cy="17.5" r="2.2" fill="#ff5c8a" stroke="none"/><circle cx="60" cy="13.5" r="2.6" fill="#4fd1c5" stroke="none"/><circle cx="72.5" cy="17.5" r="2.2" fill="#ff5c8a" stroke="none"/></g>
         <g class="face">
           <circle class="eye l" cx="52" cy="48" r="2.6" fill="#1b2233"/><circle class="eye r" cx="68" cy="48" r="2.6" fill="#1b2233"/>
           <path class="brow l" d="M47 41 Q52 38 57 41" fill="none"/><path class="brow r" d="M63 41 Q68 38 73 41" fill="none"/>
@@ -58,6 +55,18 @@ window.Stickman = (() => {
   .stickman { position: fixed; left: 40px; bottom: 18px; width: 130px; z-index: 5; pointer-events: none; display: none; }
   @media (min-width: 1041px) { .stickman { display: block; } }
   .stickman.rail-mount { position: static; display: block; width: 150px; }
+  .stickman.roam { position: fixed; display: block; width: 140px; left: 30px; bottom: 24px; z-index: 6; pointer-events: none; }
+  .sm { --dir: 1; }
+  .sm.walking { transform: scaleX(var(--dir)); }
+  .sm.walking .leg.l { animation: sm-step .32s ease-in-out infinite alternate; } .sm.walking .leg.r { animation: sm-step .32s ease-in-out infinite alternate-reverse; }
+  .sm.walking .arm.l { animation: sm-armswing .32s ease-in-out infinite alternate-reverse; } .sm.walking .arm.r { animation: sm-armswing .32s ease-in-out infinite alternate; }
+  .sm.walking .body { animation: sm-bob .32s ease-in-out infinite alternate; }
+  .sm.walking .bubble { opacity: 0 !important; }
+  .sm.do-jump .body { animation: sm-jump-once .9s cubic-bezier(.3,1.4,.5,1) 1; } .sm.do-jump .arm.l, .sm.do-jump .arm.r { animation: sm-jump-arms .9s ease-in-out 1; }
+  @keyframes sm-armswing { from { transform: rotate(-30deg); } to { transform: rotate(30deg); } }
+  @keyframes sm-bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+  @keyframes sm-jump-once { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-26px); } }
+  @keyframes sm-jump-arms { 0%,100% { transform: rotate(0); } 40% { transform: rotate(150deg); } }
   .stickman.inline { position: static; display: block; width: 96px; margin: 0 auto 6px; }
   .stickman .name { text-align: center; font: 600 12px "Public Sans", sans-serif; color: rgba(255,255,255,.7); margin-top: 2px; }
   .stickman.inline .name { color: #4a5468; }
@@ -66,8 +75,7 @@ window.Stickman = (() => {
   .sm .hand { fill: #fff; }
   .stickman.inline .sm path { stroke: #1b2233; } .stickman.inline .sm .head > circle { stroke: #1b2233; stroke-width: 4; } .stickman.inline .sm .hand { fill: #1b2233; }
   .sm .face path { stroke: #1b2233 !important; stroke-width: 2.6; }
-  .sm .plait { stroke-width: 7; } .sm .fringe { stroke-width: 4; }
-  .sm .bindi, .sm .plait-tie { stroke: none !important; }
+  .sm .crown path { stroke: #b8860b !important; stroke-width: 2 !important; } .sm .crown circle { stroke: none !important; }
   .sm .scarf { stroke: none !important; }
   .sm .bubble path { stroke: none !important; }
   .sm .arm, .sm .leg, .sm .head, .sm .fore, .sm .body, .sm .eye, .sm .mouth { transform-box: view-box; }
@@ -157,14 +165,46 @@ window.Stickman = (() => {
   @keyframes sm-throw-fore { 0% { transform: rotate(80deg); } 60% { transform: rotate(-10deg); } 100% { transform: rotate(0deg); } }
   @keyframes sm-ballfly { 0% { transform: translate(88px, 40px); opacity: 1; } 45% { transform: translate(96px, -30px); opacity: 1; } 90% { transform: translate(104px, 40px); opacity: 1; } 100% { transform: translate(104px, 44px); opacity: 0; } }
   `;
-  function mount(target, cls) {
+  let roam = null, roamT = null, zoneEl = null, pos = { x: 30, y: 24 }, walking = false;
+  function zone() {
+    const r = zoneEl ? zoneEl.getBoundingClientRect() : { left: 0, right: 260 };
+    const maxX = Math.max(20, Math.min(r.right, window.innerWidth) - 150);
+    return { minX: 8, maxX, minY: 16, maxY: Math.min(140, window.innerHeight - 320) };
+  }
+  function place(x, y, dur) {
+    if (!el) return; pos = { x, y };
+    el.style.transition = dur ? `left ${dur}ms linear, bottom ${dur}ms ease-in-out` : 'none';
+    el.style.left = x + 'px'; el.style.bottom = y + 'px';
+  }
+  function walkTo(x, y, cb) {
+    if (!el || walking) return; const dist = Math.abs(x - pos.x); const dur = Math.max(600, dist / 70 * 1000);
+    walking = true; el.querySelector('.sm').classList.add('walking'); el.querySelector('.sm').style.setProperty('--dir', x < pos.x ? -1 : 1);
+    place(x, y, dur);
+    setTimeout(() => { walking = false; if (!el) return; el.querySelector('.sm').classList.remove('walking'); el.querySelector('.sm').style.setProperty('--dir', 1); cb && cb(); }, dur + 50);
+  }
+  function roamTick() {
+    if (!el || state !== 'idle' || walking || document.hidden) return;
+    const z = zone(); const r = Math.random();
+    if (r < 0.4) walkTo(z.minX + Math.random() * (z.maxX - z.minX), z.minY + Math.random() * (z.maxY - z.minY));
+    else if (r < 0.6) { const back = { ...pos }; walkTo(z.maxX, pos.y, () => { set('point', 1600); say(line('idle'), 1600); setTimeout(() => walkTo(back.x, back.y), 1800); }); }
+    else if (r < 0.8) { el.querySelector('.sm').classList.add('do-jump'); setTimeout(() => el && el.querySelector('.sm').classList.remove('do-jump'), 900); }
+    else say(line('idle'), 2200);
+  }
+  function startRoam(z) {
+    zoneEl = z || null; clearInterval(roamT);
+    const zz = zone(); place(zz.minX + 20, 24, 0);
+    roamT = setInterval(roamTick, 8000 + Math.random() * 6000);
+    window.addEventListener('resize', () => { const q = zone(); place(Math.min(pos.x, q.maxX), pos.y, 0); });
+  }
+  function mount(target, cls, opts) {
     if (!document.getElementById('sm-css')) { const s = document.createElement('style'); s.id = 'sm-css'; s.textContent = css; document.head.appendChild(s); }
     if (el) el.remove();
     el = document.createElement('div'); el.className = 'stickman ' + (cls || (target ? 'inline' : '')); el.innerHTML = svg + `<div class="name">${NAME}</div>`;
     (target || document.body).appendChild(el);
     el.querySelectorAll('.scarf').forEach(p => p.setAttribute('fill', today.scarf));
-    el.classList.add(today.enter);
+    el.classList.add(today.enter); setTimeout(() => el && el.classList.remove(today.enter), 1400);
     set(state); life();
+    if (cls === 'roam') startRoam(opts && opts.zone);
   }
   function set(s, ms) {
     state = s; if (!el) return;
@@ -180,14 +220,14 @@ window.Stickman = (() => {
   function life() {
     clearInterval(lifeT);
     lifeT = setInterval(() => {
-      if (!el || state !== 'idle' || document.hidden) return;
+      if (!el || state !== 'idle' || document.hidden || walking) return;
       const acts = ['wave', 'look', 'stretch', 'say'];
       const a = pick(acts);
       if (a === 'say') say(line('idle'), 2200);
       else { el.querySelector('.sm').classList.add('do-' + a); setTimeout(() => el && el.querySelector('.sm').classList.remove('do-' + a), 1800); }
     }, 7000 + Math.random() * 4000);
   }
-  function remove() { clearInterval(lifeT); if (el) el.remove(); el = null; if (observer) observer.disconnect(); observer = null; lastStep = -1; }
+  function remove() { clearInterval(lifeT); clearInterval(roamT); walking = false; if (el) el.remove(); el = null; if (observer) observer.disconnect(); observer = null; lastStep = -1; }
   const STEP_ACTS = [
     { state: 'point', key: 'hook' },
     { state: 'talk', key: 'play' },

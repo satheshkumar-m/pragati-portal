@@ -1,5 +1,6 @@
 /* Interactive lesson widgets. A lesson body includes [[widget:name]]; app.js mounts it. */
-const Widgets = {};
+window.Widgets = window.Widgets || {};
+const Widgets = window.Widgets;
 
 /* Ball throw: predict the height, throw, see the truth, find the pattern. */
 Widgets['ball-throw'] = function (root) {

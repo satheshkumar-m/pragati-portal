@@ -1,6 +1,6 @@
 /* Abhi, the mentor. Jointed stick figure with a chalk scarf.
    States: idle | talk | point | think | cheer | throw.  Stickman.set('cheer', 2500); Stickman.say('Nice!') */
-const Stickman = (() => {
+window.Stickman = (() => {
   let el = null, state = 'idle', timer = null, observer = null, lastStep = -1, onStep = null;
   const NAME = 'Abhi';
   // Joints (viewBox coords): shoulder (60,80), elbows (36,104)/(84,104), hip (60,138). Limb groups pivot on their joint (transform-box: view-box).
@@ -127,3 +127,4 @@ const Stickman = (() => {
   }
   return { mount, set, say, remove, watchSteps, NAME, get state() { return state; } };
 })();
+const Stickman = window.Stickman;

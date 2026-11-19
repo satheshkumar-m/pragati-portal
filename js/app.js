@@ -71,6 +71,12 @@ function grade(questions, answers) {
   return { score, total };
 }
 
+/* ---------- make sure helper scripts exist even when an old app.html is cached ---------- */
+function ensureScript(name, glob) {
+  return new Promise(res => { if (window[glob]) return res(); const s = document.createElement('script'); s.src = `js/${name}.js?v=${Date.now()}`; s.onload = res; s.onerror = res; document.head.appendChild(s); });
+}
+const helpersReady = Promise.all([ensureScript('widgets', 'Widgets'), ensureScript('stickman', 'Stickman')]);
+
 /* ---------- read aloud (browser speech; replaced by pre-rendered audio later) ---------- */
 const Speech = (() => {
   const ok = 'speechSynthesis' in window;
@@ -92,16 +98,16 @@ const Speech = (() => {
     ok,
     speak(title, html, btn) {
       if (!ok) return;
-      if (speechSynthesis.speaking) { speechSynthesis.cancel(); btn.textContent = '▶ Listen'; return; }
+      if (speechSynthesis.speaking) { speechSynthesis.cancel(); btn.textContent = '▶ Listen'; if (window.Stickman) Stickman.set('idle'); return; }
       const u = new SpeechSynthesisUtterance(title + '. ' + textOf(html));
       if (voice) u.voice = voice; u.rate = 0.95; u.pitch = 1;
-      u.onend = u.onerror = () => { btn.textContent = '▶ Listen'; };
-      btn.textContent = '■ Stop'; speechSynthesis.speak(u);
+      u.onend = u.onerror = () => { btn.textContent = '▶ Listen'; if (window.Stickman) Stickman.set('idle'); };
+      btn.textContent = '■ Stop'; speechSynthesis.speak(u); if (window.Stickman) Stickman.set('talk');
     },
     stop() { if (ok) speechSynthesis.cancel(); },
   };
 })();
-window.addEventListener('hashchange', () => Speech.stop());
+window.addEventListener('hashchange', () => { Speech.stop(); if (window.Stickman) Stickman.remove(); });
 
 /* ---------- student ---------- */
 async function renderHome(user) {
@@ -174,11 +180,15 @@ async function renderLesson(user, id) {
     ${existing ? `<p class="muted">${existing.total ? `You scored ${existing.score}/${existing.total}.` : 'Saved. Thank you for answering honestly.'}</p>` : '<p style="margin-top:12px"><button id="submit-q">Submit answers</button></p>'}
   </div>` : (existing ? '<div class="card"><span class="pill ok">Marked as read</span></div>' : '<div class="card"><button id="mark-read">Mark as done</button></div>')}
   <div class="card"><h3>Ask about this lesson</h3><textarea id="ask-text" placeholder="What is confusing? Be specific."></textarea><p style="margin-top:8px"><button id="ask-btn" class="secondary">Send question</button></p></div>`;
+  await helpersReady;
+  const slot = document.createElement('div'); slot.id = 'sm-slot'; view.querySelector('.card').prepend(slot);
+  Stickman.mount(window.innerWidth < 1100 ? slot : null); Stickman.set('point', 3500);
   document.querySelectorAll('[data-widget]').forEach(el => { const w = window.Widgets && Widgets[el.dataset.widget]; if (w) w(el); });
   const save = async answers => {
     const { score, total } = grade(qs, answers);
     await PB.create('attempts', { user: user.id, lesson: id, answers, score, total });
-    toast(total ? `Scored ${score}/${total}` : 'Saved'); renderLesson(user, id);
+    toast(total ? `Scored ${score}/${total}` : 'Saved'); await renderLesson(user, id);
+    if (window.Stickman && total) { if (score / total >= 0.75) Stickman.set('cheer', 3000); else { Stickman.set('think'); Stickman.say('Read the explanations', 3500); } }
   };
   $('#submit-q')?.addEventListener('click', () => {
     const a = collectAnswers(qs);

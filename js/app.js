@@ -10,7 +10,10 @@ const TRACK = { stream: 'Stream', ai: 'AI', academic: 'Class 11' };
 
 const cache = {};
 async function weeks() {
-  if (!cache.weeks) cache.weeks = await PB.all('weeks', { sort: 'number' });
+  if (cache.weeks) return cache.weeks;
+  try { const c = JSON.parse(sessionStorage.getItem('pl_weeks') || 'null'); if (c && c.length) { cache.weeks = c; PB.all('weeks', { sort: 'number' }).then(w => { cache.weeks = w; sessionStorage.setItem('pl_weeks', JSON.stringify(w)); }).catch(() => {}); return c; } } catch {}
+  cache.weeks = await PB.all('weeks', { sort: 'number' });
+  try { sessionStorage.setItem('pl_weeks', JSON.stringify(cache.weeks)); } catch {}
   return cache.weeks;
 }
 function unlocked(w, user) {
@@ -460,14 +463,17 @@ async function renderAdmin(user, tab = 'queue') {
 }
 
 /* ---------- router ---------- */
+let refreshed = false;
 async function route() {
-  const user = PB.isLoggedIn() ? (PB.user || await PB.refresh()) : null;
+  const user = PB.isLoggedIn() ? PB.user : null;
+  if (user && !refreshed) { refreshed = true; PB.refresh().then(u => { if (!u) { renderLogin('Session expired. Sign in again.'); } }); }
   if (!user) return renderLogin();
   $('#logout').style.display = ''; $('#who').textContent = user.role === 'admin' ? 'admin' : user.name.split(' ')[0];
   $('#lang').style.display = user.role === 'student' ? '' : 'none'; applyLang(user); $('#lang').onchange = e => setLang(user, e.target.value);
   $('#nav-progress').style.display = user.role === 'student' ? '' : 'none';
   const [path, arg] = location.hash.replace('#', '').split('/');
-  view.innerHTML = '<p class="muted">Loading…</p>'; view.classList.remove('wide');
+  view.innerHTML = '<div class="card flat loading"><p class="muted">Loading…</p><p class="small muted slow" style="display:none">Waking the server — this only happens after a quiet spell.</p></div>'; view.classList.remove('wide');
+  setTimeout(() => { const s = view.querySelector('.loading .slow'); if (s) s.style.display = ''; }, 2500);
   try {
     if (user.role === 'admin') return renderAdmin(user, path && path !== 'home' ? path : 'queue');
     if (user.role === 'parent') return renderParent(user);
@@ -484,4 +490,4 @@ async function route() {
 $('#logout').onclick = () => { PB.logout(); cache.weeks = null; go('#home'); renderLogin(); };
 $('#nav-progress').onclick = () => go('#progress');
 window.addEventListener('hashchange', route);
-PB.refresh().finally(route);
+route();

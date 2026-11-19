@@ -7,7 +7,19 @@ const PB = (() => {
 
   function save(a) { auth = a; a ? localStorage.setItem(KEY, JSON.stringify(a)) : localStorage.removeItem(KEY); }
 
+  let awake = false;
+  async function wake(maxMs = 20000) {
+    if (awake) return true; const t0 = Date.now();
+    while (Date.now() - t0 < maxMs) {
+      try { const r = await fetch(BASE + '/api/health', { cache: 'no-store' }); if (r.ok) { awake = true; return true; } } catch {}
+      await new Promise(r => setTimeout(r, 800));
+    }
+    return false;
+  }
+  // keep the backend warm while the portal is open
+  setInterval(() => { if (!document.hidden) fetch(BASE + '/api/health', { cache: 'no-store' }).catch(() => {}); }, 150000);
   async function req(path, { method = 'GET', body, form, retry = true, token } = {}) {
+    if (!awake) await wake();
     const headers = {};
     const t = token || (auth && auth.token);
     if (t) headers['Authorization'] = t;
@@ -18,10 +30,10 @@ const PB = (() => {
     try {
       res = await fetch(BASE + path, { method, headers, body: payload });
     } catch (e) {
-      if (retry) { await new Promise(r => setTimeout(r, 3000)); return req(path, { method, body, form, retry: false, token }); }
+      if (retry) { awake = false; await wake(); return req(path, { method, body, form, retry: false, token }); }
       throw e;
     }
-    if (res.status === 503 && retry) { await new Promise(r => setTimeout(r, 4000)); return req(path, { method, body, form, retry: false, token }); }
+    if ((res.status === 503 || res.status === 502) && retry) { awake = false; await wake(); return req(path, { method, body, form, retry: false, token }); }
     const text = await res.text();
     let data = {};
     try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
@@ -64,6 +76,6 @@ const PB = (() => {
     async update(col, id, body) { return req(`/api/collections/${col}/records/${id}`, { method: 'PATCH', body }); },
     async remove(col, id) { return req(`/api/collections/${col}/records/${id}`, { method: 'DELETE' }); },
     fileUrl(record, filename) { return `${BASE}/api/files/${record.collectionId}/${record.id}/${filename}`; },
-    raw: req,
+    raw: req, wake,
   };
 })();

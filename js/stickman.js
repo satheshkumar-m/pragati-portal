@@ -70,6 +70,7 @@ window.Stickman = (() => {
   </g>
 </svg>`;
   const css = `
+  .stickman svg { overflow: visible; }
   .stickman { position: fixed; left: 40px; bottom: 18px; width: 130px; z-index: 5; pointer-events: none; display: none; }
   @media (min-width: 1041px) { .stickman { display: block; } }
   .stickman.rail-mount { position: static; display: block; width: 150px; }

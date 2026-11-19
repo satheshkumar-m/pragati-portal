@@ -71,6 +71,38 @@ function grade(questions, answers) {
   return { score, total };
 }
 
+/* ---------- read aloud (browser speech; replaced by pre-rendered audio later) ---------- */
+const Speech = (() => {
+  const ok = 'speechSynthesis' in window;
+  let voice = null;
+  function pickVoice() {
+    const vs = speechSynthesis.getVoices();
+    const pref = [/en-IN/i, /India/i, /en-GB/i, /en-US/i];
+    for (const p of pref) { const v = vs.find(x => p.test(x.lang) || p.test(x.name)); if (v) return v; }
+    return vs[0] || null;
+  }
+  if (ok) { voice = pickVoice(); speechSynthesis.onvoiceschanged = () => { voice = pickVoice(); }; }
+  function textOf(html) {
+    const d = document.createElement('div'); d.innerHTML = html;
+    d.querySelectorAll('li').forEach(li => li.insertAdjacentText('afterend', '. '));
+    d.querySelectorAll('h3,p').forEach(el => el.insertAdjacentText('afterend', ' '));
+    return d.textContent.replace(/\s+/g, ' ').trim();
+  }
+  return {
+    ok,
+    speak(title, html, btn) {
+      if (!ok) return;
+      if (speechSynthesis.speaking) { speechSynthesis.cancel(); btn.textContent = '▶ Listen'; return; }
+      const u = new SpeechSynthesisUtterance(title + '. ' + textOf(html));
+      if (voice) u.voice = voice; u.rate = 0.95; u.pitch = 1;
+      u.onend = u.onerror = () => { btn.textContent = '▶ Listen'; };
+      btn.textContent = '■ Stop'; speechSynthesis.speak(u);
+    },
+    stop() { if (ok) speechSynthesis.cancel(); },
+  };
+})();
+window.addEventListener('hashchange', () => Speech.stop());
+
 /* ---------- student ---------- */
 async function renderHome(user) {
   const ws = await weeks();
@@ -133,7 +165,7 @@ async function renderLesson(user, id) {
   <a href="#home" class="small">← Week ${l.expand?.week?.number || ''}</a>
   <div class="card">
     <span class="pill ${l.track}">${TRACK[l.track]}</span>
-    <h1 style="margin-top:8px">${esc(l.title)}</h1>
+    <div class="row spread"><h1 style="margin:8px 0">${esc(l.title)}</h1>${Speech.ok ? '<button id="listen" class="secondary" style="padding:6px 12px">▶ Listen</button>' : ''}</div>
     ${l.video_url ? `<iframe class="video" src="${esc(l.video_url)}" allowfullscreen></iframe>` : ''}
     <div class="lesson-body">${l.body || ''}</div>
   </div>
@@ -153,6 +185,7 @@ async function renderLesson(user, id) {
     save(a);
   });
   $('#mark-read')?.addEventListener('click', () => save([]));
+  $('#listen')?.addEventListener('click', e => Speech.speak(l.title, l.body || '', e.target));
   $('#ask-btn').onclick = async () => {
     const t = $('#ask-text').value.trim(); if (!t) return;
     await PB.create('tutor_questions', { user: user.id, lesson: id, question: t, status: 'open' });

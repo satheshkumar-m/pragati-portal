@@ -47,6 +47,23 @@ window.Stickman = (() => {
         </g>
       </g>
       <circle class="ball2" cx="0" cy="0" r="7" fill="#ffd166" stroke="#c98f00" stroke-width="2" opacity="0"/>
+    </g>
+    <g class="lying" opacity="0">
+      <ellipse cx="60" cy="214" rx="56" ry="4" fill="rgba(0,0,0,.35)" class="shadow"/>
+      <g transform="translate(-14,80) scale(0.66)">
+        <path d="M20 200 L52 200 L90 192" fill="none"/>
+        <path d="M90 192 L60 150 L30 196" fill="none"/>
+        <path d="M90 192 L165 178" fill="none"/>
+        <path d="M150 182 L140 198 L120 200" fill="none"/>
+        <path d="M165 178 L178 204 L192 176" fill="none"/>
+        <circle class="hand" cx="192" cy="176" r="3.5"/>
+        <path class="scarf" d="M156 170 Q166 184 178 176 L176 170 Q166 178 158 164 Z" fill="#ffd166"/>
+        <g class="head"><circle cx="198" cy="156" r="22" fill="#fff"/>
+          <g class="crown" transform="rotate(20 198 156)"><path d="M182 137 L185 121 L193 131 L198 117 L203 131 L211 121 L214 137 Z" fill="#f4b400" stroke="#b8860b" stroke-width="2"/><circle cx="185.5" cy="121.5" r="2.2" fill="#ff5c8a" stroke="none"/><circle cx="198" cy="117.5" r="2.6" fill="#4fd1c5" stroke="none"/><circle cx="210.5" cy="121.5" r="2.2" fill="#ff5c8a" stroke="none"/></g>
+          <g class="face"><path d="M186 152 Q190 149 194 152" fill="none"/><path d="M202 152 Q206 149 210 152" fill="none"/><path d="M190 164 Q198 170 206 164" fill="none"/><text x="226" y="128" font-size="13" font-family="Public Sans, sans-serif" fill="#fff" stroke="none" class="zz">z z</text></g>
+        </g>
+    </g>
+    <g class="body-extra">
       <g class="bubble" opacity="0"><rect x="0" y="-36" width="120" height="28" rx="10" fill="#fff"/><path d="M60 -8 l-6 8 l12 0 z" fill="#fff" stroke="none"/><text class="btext" x="60" y="-17" text-anchor="middle" font-size="12" font-weight="600" font-family="Public Sans, sans-serif" fill="#1b2233">…</text></g>
     </g>
   </g>
@@ -134,6 +151,10 @@ window.Stickman = (() => {
   @keyframes sm-stretch-once-r { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(-165deg); } }
   @keyframes sm-breathe { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.012); } }
   @keyframes sm-blink { 0%,93%,100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+  .sm .lying, .sm .body { transition: opacity .5s; }
+  .st-lie .body { opacity: 0; } .st-lie .lying { opacity: 1; }
+  .st-lie .lying .zz { animation: sm-zz 2.4s ease-in-out infinite; } @keyframes sm-zz { 0%,100% { opacity: .2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-6px); } }
+  .stickman.inline .sm .lying .zz { fill: #1b2233; }
   .st-idle .arm.l { transform: rotate(8deg); } .st-idle .arm.r { transform: rotate(-8deg); }
   .st-talk .arm.r { animation: sm-gesture 1.2s ease-in-out infinite; }
   .st-talk .arm.r .fore { animation: sm-gesture-fore 1.2s ease-in-out infinite; }
@@ -190,7 +211,19 @@ window.Stickman = (() => {
     else if (r < 0.8) { el.querySelector('.sm').classList.add('do-jump'); setTimeout(() => el && el.querySelector('.sm').classList.remove('do-jump'), 900); }
     else say(line('idle'), 2200);
   }
+  let lastAct = Date.now(), restT = null, lying = false;
+  const bump = () => { lastAct = Date.now(); if (lying) wake(); };
+  ['mousemove', 'keydown', 'scroll', 'click', 'touchstart', 'wheel'].forEach(ev => window.addEventListener(ev, bump, { passive: true }));
+  function rest() {
+    if (!el || lying || walking || state !== 'idle') return;
+    const z = zone(); lying = true;
+    walkTo(z.minX, 16, () => { if (!el || !lying) return; state = 'lie'; el.querySelector('.sm').setAttribute('class', 'sm st-lie'); });
+  }
+  function wake() {
+    lying = false; if (!el) return; set('idle'); say(line('idle'), 1800);
+  }
   function startRoam(z) {
+    clearInterval(restT); restT = setInterval(() => { if (Date.now() - lastAct > 45000) rest(); }, 5000);
     zoneEl = z || null; clearInterval(roamT);
     const zz = zone(); place(zz.minX + 20, 24, 0);
     roamT = setInterval(roamTick, 8000 + Math.random() * 6000);
@@ -227,7 +260,7 @@ window.Stickman = (() => {
       else { el.querySelector('.sm').classList.add('do-' + a); setTimeout(() => el && el.querySelector('.sm').classList.remove('do-' + a), 1800); }
     }, 7000 + Math.random() * 4000);
   }
-  function remove() { clearInterval(lifeT); clearInterval(roamT); walking = false; if (el) el.remove(); el = null; if (observer) observer.disconnect(); observer = null; lastStep = -1; }
+  function remove() { clearInterval(lifeT); clearInterval(roamT); clearInterval(restT); walking = false; lying = false; if (el) el.remove(); el = null; if (observer) observer.disconnect(); observer = null; lastStep = -1; }
   const STEP_ACTS = [
     { state: 'point', key: 'hook' },
     { state: 'talk', key: 'play' },

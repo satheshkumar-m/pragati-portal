@@ -281,8 +281,40 @@ async function renderParent(user) {
   view.innerHTML = html;
 }
 
+/* ---------- content sync: content/*.json is the source of truth; admin visit upserts it ---------- */
+async function syncContent() {
+  if (cache.synced) return; cache.synced = true;
+  const res = await fetch('content/week1.json?v=' + Date.now()); const content = await res.json();
+  const ws = await PB.all('weeks', { sort: 'number' }); const weekIds = {};
+  let n = 0;
+  for (const w of content.weeks) {
+    let rec = ws.find(x => x.number === w.number);
+    if (!rec) { rec = await PB.create('weeks', { ...w, product: 'teens' }); n++; }
+    else if (rec.title !== w.title || rec.summary !== w.summary) { await PB.update('weeks', rec.id, w); n++; }
+    weekIds[w.number] = rec.id;
+  }
+  const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  const ls = await PB.all('lessons');
+  for (const l of content.lessons) {
+    const data = { ...l, week: weekIds[l.week] };
+    const rec = ls.find(x => x.week === data.week && x.track === l.track && x.order === l.order);
+    if (!rec) { await PB.create('lessons', { ...data, approved: true }); n++; }
+    else if (rec.title !== l.title || rec.body !== l.body || !same(rec.questions, l.questions) || rec.minutes !== l.minutes || rec.video_url !== l.video_url) { await PB.update('lessons', rec.id, data); n++; }
+  }
+  const ss = await PB.all('practice_sets');
+  for (const p of content.practice_sets) {
+    const data = { ...p, week: weekIds[p.week] };
+    const rec = ss.find(x => x.week === data.week && x.stream === p.stream && x.day === p.day);
+    if (!rec) { await PB.create('practice_sets', { ...data, approved: true }); n++; }
+    else if (rec.title !== p.title || !same(rec.questions, p.questions)) { await PB.update('practice_sets', rec.id, data); n++; }
+  }
+  cache.weeks = null;
+  if (n) toast(`Content synced: ${n} item${n > 1 ? 's' : ''} updated`);
+}
+
 /* ---------- admin ---------- */
 async function renderAdmin(user, tab = 'queue') {
+  try { await syncContent(); } catch (e) { toast('Content sync failed: ' + e.message); }
   const tabs = ['queue', 'questions', 'reports', 'students', 'content'];
   let body = '';
   if (tab === 'queue') {

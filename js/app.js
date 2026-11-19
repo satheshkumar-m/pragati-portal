@@ -173,7 +173,7 @@ async function renderLesson(user, id) {
     <span class="pill ${l.track}">${TRACK[l.track]}</span>
     <div class="row spread"><h1 style="margin:8px 0">${esc(l.title)}</h1>${Speech.ok ? '<button id="listen" class="secondary" style="padding:6px 12px">▶ Listen</button>' : ''}</div>
     ${l.video_url ? `<iframe class="video" src="${esc(l.video_url)}" allowfullscreen></iframe>` : ''}
-    <div class="lesson-body">${l.body || ''}</div>
+    <div class="lesson-body">${(l.body || '').replace(/<p>\s*\[\[widget:([a-z0-9-]+)\]\]\s*<\/p>|\[\[widget:([a-z0-9-]+)\]\]/g, (m, a, b) => `<div data-widget="${a || b}"></div>`)}</div>
   </div>
   ${qs.length ? `<div class="card"><h3>${qs.every(q => q.type === 'profile') ? 'Your answers' : 'Check yourself'}</h3>
     ${renderQuestions(qs, existing ? existing.answers : undefined)}
@@ -182,7 +182,8 @@ async function renderLesson(user, id) {
   <div class="card"><h3>Ask about this lesson</h3><textarea id="ask-text" placeholder="What is confusing? Be specific."></textarea><p style="margin-top:8px"><button id="ask-btn" class="secondary">Send question</button></p></div>`;
   await helpersReady;
   const slot = document.createElement('div'); slot.id = 'sm-slot'; view.querySelector('.card').prepend(slot);
-  Stickman.mount(window.innerWidth < 1100 ? slot : null); Stickman.set('point', 3500);
+  Stickman.mount(window.innerWidth < 1100 ? slot : null); Stickman.set('point', 3500); Stickman.say('Read this first', 3500);
+  Stickman.watchSteps(view.querySelectorAll('.step'));
   document.querySelectorAll('[data-widget]').forEach(el => { const w = window.Widgets && Widgets[el.dataset.widget]; if (w) w(el); });
   const save = async answers => {
     const { score, total } = grade(qs, answers);
